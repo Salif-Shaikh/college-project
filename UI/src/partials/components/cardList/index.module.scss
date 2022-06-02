@@ -1,0 +1,58 @@
+.cardContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  //   border: 1px solid grey;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  background-color: #fff;
+  .cardList {
+    display: flex;
+    padding: 20px;
+    flex-wrap: wrap;
+    .list {
+      display: flex;
+      flex-direction: row;
+      padding-right: 15px;
+      & > strong {
+        padding-right: 10px;
+      }
+      // & > span > span:first-child {
+      //   background-color: rgba(99, 102, 241, var(--tw-bg-opacity));
+      //   padding: 4px;
+      //   border-radius: 10px;
+      //   color: white;
+      //   font-size: 13px;
+      // }
+    }
+  }
+}
+.ctaButtons {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  & > button {
+    border-radius: 5px;
+    padding: 5px;
+    margin: 2px;
+    color: rgba(255, 255, 255, var(--tw-text-opacity));
+    background-color: rgba(99, 102, 241, var(--tw-bg-opacity));
+    &:hover {
+      background-color: rgba(175, 174, 174, var(--tw-bg-opacity));
+    }
+  }
+  .editBtn {
+    background-color: rgba(225, 188, 125, var(--tw-bg-opacity));
+  }
+  .feedbackBtn {
+    position: relative;
+    background-color: rgba(240, 201, 41, var(--tw-bg-opacity));
+  }
+  .doneBtn {
+    background-color: rgba(244, 139, 41, var(--tw-bg-opacity));
+  }
+  .closeBtn {
+    background-color: rgba(172, 13, 13, var(--tw-bg-opacity));
+  }
+}
