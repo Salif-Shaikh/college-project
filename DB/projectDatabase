@@ -1,0 +1,2773 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.3
+-- Dumped by pg_dump version 13.3
+
+-- Started on 2022-06-02 20:59:57
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 2 (class 3079 OID 58917)
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+
+--
+-- TOC entry 3201 (class 0 OID 0)
+-- Dependencies: 2
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
+
+--
+-- TOC entry 234 (class 1255 OID 58928)
+-- Name: NodeJsCrawlerDataInsert(json); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."NodeJsCrawlerDataInsert"(jsondata json)
+    LANGUAGE sql
+    AS $_$
+	DO $BODY$
+		DECLARE
+		i JSON;
+		BEGIN
+			FOR i IN SELECT * FROM json_array_elementI(jsondata) LOOP
+				INSERT INTO "NodeJsCrawlerData"("Name","Contact","Email","Bhk","Sqft","Price","Date","Location")
+				VALUES (
+				i ->> 'Name',i ->> 'Contact',i ->> 'Email',i ->> 'Bhk',i ->> 'Sqft',i ->> 'Price',
+				i ->> 'Date',i ->> 'Location');
+			END LOOP;
+		END;
+	$BODY$
+	LANGUAGE plpgsql;
+$_$;
+
+
+ALTER PROCEDURE public."NodeJsCrawlerDataInsert"(jsondata json) OWNER TO postgres;
+
+--
+-- TOC entry 235 (class 1255 OID 58929)
+-- Name: check_user(text, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.check_user(user_name text, user_password text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	PERFORM true FROM users WHERE username=user_name AND userpassword=user_password;
+	IF FOUND THEN
+	RETURN true;
+	ELSE 
+	RETURN false;
+	END IF;
+END $$;
+
+
+ALTER FUNCTION public.check_user(user_name text, user_password text) OWNER TO postgres;
+
+--
+-- TOC entry 236 (class 1255 OID 58930)
+-- Name: createApiLogs(character varying, character varying, character varying, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."createApiLogs"(_description character varying, _apiurl character varying, _objects character varying, _createby character varying)
+    LANGUAGE sql
+    AS $$ 
+INSERT INTO "apiLogs"(description, "apiUrl","requestObjects","createdBy","createdDate","isDelete")
+VALUES (_description,_apiurl, _objects,_createby, CURRENT_DATE, 'false');
+$$;
+
+
+ALTER PROCEDURE public."createApiLogs"(_description character varying, _apiurl character varying, _objects character varying, _createby character varying) OWNER TO postgres;
+
+--
+-- TOC entry 237 (class 1255 OID 58931)
+-- Name: cvdftempplotleads(); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.cvdftempplotleads()
+    LANGUAGE sql
+    AS $$
+DELETE FROM tempplotleads 
+WHERE mobile IN 
+	(SELECT mobile FROM plotleads INTERSECT SELECT mobile FROM tempplotleads);
+$$;
+
+
+ALTER PROCEDURE public.cvdftempplotleads() OWNER TO postgres;
+
+--
+-- TOC entry 238 (class 1255 OID 58932)
+-- Name: cvdftemprentalleads(); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.cvdftemprentalleads()
+    LANGUAGE sql
+    AS $$
+DELETE FROM temprentalleads 
+WHERE mobile IN 
+	(SELECT mobile FROM rentalleads INTERSECT SELECT mobile FROM temprentalleads);
+$$;
+
+
+ALTER PROCEDURE public.cvdftemprentalleads() OWNER TO postgres;
+
+--
+-- TOC entry 239 (class 1255 OID 58933)
+-- Name: cvdftempresaleleads(); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.cvdftempresaleleads()
+    LANGUAGE sql
+    AS $$
+DELETE FROM tempresaleleads 
+WHERE mobile IN 
+	(SELECT mobile FROM resaleleads INTERSECT SELECT mobile FROM tempresaleleads);
+$$;
+
+
+ALTER PROCEDURE public.cvdftempresaleleads() OWNER TO postgres;
+
+--
+-- TOC entry 240 (class 1255 OID 58934)
+-- Name: cvdftempsaleleads(); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.cvdftempsaleleads()
+    LANGUAGE sql
+    AS $$
+DELETE FROM tempsaleleads 
+WHERE mobile IN 
+	(SELECT mobile FROM saleleads INTERSECT SELECT mobile FROM tempsaleleads);
+$$;
+
+
+ALTER PROCEDURE public.cvdftempsaleleads() OWNER TO postgres;
+
+--
+-- TOC entry 249 (class 1255 OID 58935)
+-- Name: datefilter(text, date, date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.datefilter(name_of_table text, startdate date, enddate date) RETURNS TABLE(societyname character varying, ownername character varying, mobile integer, bhk character varying, sqft character varying, rent character varying, deposit character varying, furnishedstatus character varying, availablefor character varying, flatno character varying, wingno character varying, floor character varying, poss character varying, createdby character varying, createddate date, updateddate date, updatedby character varying, isdeleted character varying, deletedate date, deleteby character varying, brokerage integer, location character varying, price character varying)
+    LANGUAGE sql
+    AS $$
+SELECT societyname , ownername , mobile, bhk , sqft , rent , deposit , furnishedstatus , availablefor , flatno , wingno , floor , poss , createdby , createddate, updateddate, updatedby , isdeleted , deletedate, deleteby , brokerage, location , price  FROM rentalleads
+   WHERE createddate BETWEEN startDate AND endDate;
+$$;
+
+
+ALTER FUNCTION public.datefilter(name_of_table text, startdate date, enddate date) OWNER TO postgres;
+
+--
+-- TOC entry 250 (class 1255 OID 58936)
+-- Name: getLocationPlot(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getLocationPlot"() RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(t) from (SELECT location FROM plotleads GROUP BY location ORDER BY location) t;
+$$;
+
+
+ALTER FUNCTION public."getLocationPlot"() OWNER TO postgres;
+
+--
+-- TOC entry 251 (class 1255 OID 58937)
+-- Name: getLocationRental(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getLocationRental"() RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(t) from (SELECT location FROM rentalleads GROUP BY location ORDER BY location) t;
+$$;
+
+
+ALTER FUNCTION public."getLocationRental"() OWNER TO postgres;
+
+--
+-- TOC entry 252 (class 1255 OID 58938)
+-- Name: getLocationResale(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getLocationResale"() RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(t) from (SELECT location FROM resaleleads GROUP BY location ORDER BY location) t;
+$$;
+
+
+ALTER FUNCTION public."getLocationResale"() OWNER TO postgres;
+
+--
+-- TOC entry 253 (class 1255 OID 58939)
+-- Name: getLocationSale(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getLocationSale"() RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(t) from (SELECT location FROM saleleads GROUP BY location ORDER BY location) t;
+$$;
+
+
+ALTER FUNCTION public."getLocationSale"() OWNER TO postgres;
+
+--
+-- TOC entry 267 (class 1255 OID 58940)
+-- Name: getPlotLeads(integer, integer, date, date, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getPlotLeads"(_limit integer, _offset integer, _startdate date, _enddate date, _location character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+SELECT row_to_json(t) FROM (
+	SELECT  leadname AS "leadName", mobile AS "mobile" , sqft AS "sqft", poss AS "poss",
+	createby AS "createBy", createddate AS "createdDate",updatedby AS "updatedBy",
+	updateddate AS "updatedDate", brokerage AS "brokerage", location AS "location", 
+	price AS "price", leadid AS "leadId", "leadStatus", 
+	leadgenerationdate AS "leadGenerationDate", "followUpDate", email as "emailId" 
+	FROM public.plotleads WHERE leadgenerationdate BETWEEN _startdate AND _enddate AND (location = _location AND isdeleted = 'false')
+	ORDER BY leadgenerationdate LIMIT _limit OFFSET _offset	
+)t;
+$$;
+
+
+ALTER FUNCTION public."getPlotLeads"(_limit integer, _offset integer, _startdate date, _enddate date, _location character varying) OWNER TO postgres;
+
+--
+-- TOC entry 268 (class 1255 OID 58941)
+-- Name: getPlotLeadsFeedback(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getPlotLeadsFeedback"(keystr character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(t) from (
+select description AS "description", followupdate AS "followUpDate",  createddate AS "createdDate" from plotleadsfeedback
+	where plotid = (select plotid from plotleads where leadid=keystr)
+	ORDER BY plotfbid DESC
+)t;
+$$;
+
+
+ALTER FUNCTION public."getPlotLeadsFeedback"(keystr character varying) OWNER TO postgres;
+
+--
+-- TOC entry 269 (class 1255 OID 58942)
+-- Name: getPlotWorkdayLeads(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getPlotWorkdayLeads"() RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(pl) from (
+	SELECT leadname AS "leadName", mobile AS "mobile" , sqft AS "sqft", poss AS "poss", createby AS "createBy",
+	createddate AS "createdDate",updatedby AS "updatedBy", updateddate AS "updatedDate", brokerage AS "brokerage", 
+	location AS "location", price AS "price", leadid AS "leadId", "leadStatus", leadgenerationdate AS "leadGenerationDate", email AS "emailId"
+	FROM plotleads WHERE "followUpDate" = CURRENT_DATE
+)pl;
+$$;
+
+
+ALTER FUNCTION public."getPlotWorkdayLeads"() OWNER TO postgres;
+
+--
+-- TOC entry 270 (class 1255 OID 58943)
+-- Name: getRentalLeads(integer, integer, date, date, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getRentalLeads"(_limit integer, _offset integer, _startdate date, _enddate date, _location character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+SELECT row_to_json(t) FROM (
+	SELECT societyname AS "societyName", leadname AS "leadName", mobile AS "mobile", bhk AS "bhk", sqft AS "sqft",
+	rent AS "rent", deposit AS "deposit", furnishedstatus AS "furnishedStatus", availablefor AS "available",
+	flatno AS "flatNo", wingno AS "wingNo", poss AS "poss", createdby AS "createdBy", createddate AS "createdDate",
+	updateddate AS "updatedDate",updatedby AS "updatedBy", brokerage AS "brokerage", location AS "location",
+	leadid AS "leadId", "leadStatus", leadgenerationdate AS "leadGenerationDate", "followUpDate", email AS "emailId"
+	FROM rentalleads WHERE leadgenerationdate BETWEEN _startdate AND _enddate AND (location = _location AND isdeleted = 'false') 
+	ORDER BY leadgenerationdate LIMIT _limit OFFSET _offset
+)t;
+$$;
+
+
+ALTER FUNCTION public."getRentalLeads"(_limit integer, _offset integer, _startdate date, _enddate date, _location character varying) OWNER TO postgres;
+
+--
+-- TOC entry 271 (class 1255 OID 58944)
+-- Name: getRentalLeadsFeedback(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getRentalLeadsFeedback"(keystr character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(t) from (
+select description AS "description",followupdate AS "followUpDate", createddate AS "createdDate" from rentalleadsfeedback 
+	where rentalleadsid = (select rentalid from rentalleads where leadid=keystr)
+	ORDER BY rentalfbid DESC
+)t;
+$$;
+
+
+ALTER FUNCTION public."getRentalLeadsFeedback"(keystr character varying) OWNER TO postgres;
+
+--
+-- TOC entry 273 (class 1255 OID 58945)
+-- Name: getRentalWorkdayLeads(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getRentalWorkdayLeads"() RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(rnl) from (
+	SELECT societyname AS "societyName", leadname AS "leadName", mobile AS "mobile", bhk AS "bhk", sqft AS "sqft",
+	rent AS "rent", deposit AS "deposit", furnishedstatus AS "furnishedStatus", availablefor AS "available",
+	flatno AS "flatNo", wingno AS "wingNo", poss AS "poss", createdby AS "createdBy", createddate AS "createdDate",
+	updateddate AS "updatedDate",updatedby AS "updatedBy", brokerage AS "brokerage", location AS "location",email AS "emailId",
+	leadid AS "leadId", "leadStatus", leadgenerationdate AS "leadGenerationDate"  
+	FROM rentalleads WHERE "followUpDate" = CURRENT_DATE)rnl;
+$$;
+
+
+ALTER FUNCTION public."getRentalWorkdayLeads"() OWNER TO postgres;
+
+--
+-- TOC entry 274 (class 1255 OID 58946)
+-- Name: getResaleFeedback(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getResaleFeedback"(keystr character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(t) from (
+select description AS "description",followupdate AS "followUpDate", createddate AS "createdDate" from resaleleadsfeedback 
+	where resaleleadsid = (select resaleid from resaleleads where leadid=keystr)
+	ORDER BY resalefbid DESC
+)t;
+$$;
+
+
+ALTER FUNCTION public."getResaleFeedback"(keystr character varying) OWNER TO postgres;
+
+--
+-- TOC entry 275 (class 1255 OID 58947)
+-- Name: getResaleLeads(integer, integer, date, date, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getResaleLeads"(_limit integer, _offset integer, _startdate date, _enddate date, _location character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+SELECT row_to_json(t) FROM (
+	SELECT  societyname AS "societyName", leadname AS "leadName", mobile AS "mobile", bhk AS "bhk",
+	sqft AS "sqft", floor AS "floor", furnishedstatus AS "furnishedStatus", flatno AS "flatNo", wingno AS "wingNo",
+	poss AS "poss", createdby AS "createdBy", createddate AS "createdDate",
+	brokerage AS "brokerage", location AS "location", price AS "price", leadid AS "leadId",
+	"leadStatus" ,leadgenerationdate AS "leadGenerationDate", "followUpDate", email AS "emailId"
+	FROM public.resaleleads WHERE leadgenerationdate BETWEEN _startdate AND _enddate AND (location = _location AND isdeleted = 'false') 
+	ORDER BY leadgenerationdate LIMIT _limit OFFSET _offset
+)t
+$$;
+
+
+ALTER FUNCTION public."getResaleLeads"(_limit integer, _offset integer, _startdate date, _enddate date, _location character varying) OWNER TO postgres;
+
+--
+-- TOC entry 276 (class 1255 OID 58948)
+-- Name: getResaleWorkdayLeads(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getResaleWorkdayLeads"() RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(rsl) from (
+	SELECT  societyname AS "societyName", leadname AS "leadName", mobile AS "mobile", bhk AS "bhk",
+	sqft AS "sqft", floor AS "floor", furnishedstatus AS "furnishedStatus", flatno AS "flatNo", wingno AS "wingNo",
+	poss AS "poss", createdby AS "createdBy", createddate AS "createdDate",
+	brokerage AS "brokerage", location AS "location", price AS "price", leadid AS "leadId", email AS "emailId",
+	"leadStatus" ,leadgenerationdate AS "leadGenerationDate"
+	FROM resaleleads WHERE "followUpDate" = CURRENT_DATE)rsl;
+$$;
+
+
+ALTER FUNCTION public."getResaleWorkdayLeads"() OWNER TO postgres;
+
+--
+-- TOC entry 277 (class 1255 OID 58949)
+-- Name: getSaleLeads(integer, integer, date, date, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getSaleLeads"(_limit integer, _offset integer, _startdate date, _enddate date, _location character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(t) from (
+	SELECT  societyname AS "societyName", leadname AS "leadName", mobile AS "mobile", bhk AS "bhk",
+	sqft AS "sqft", furnishedstatus AS "furnishedStatus", flatno AS "flatNo", wingno AS "wingNo",
+	poss AS "poss", createdby AS "createdBy", createddate AS "createdDate",
+	brokerage AS "brokerage", location AS "location", price AS "price", leadid AS "leadId",
+	"leadStatus", leadgenerationdate AS "leadGenerationDate", "followUpDate", email AS "emailId" 
+	from saleleads WHERE leadgenerationdate BETWEEN _startdate AND _enddate AND (location = _location AND isdeleted = 'false')
+	ORDER BY leadgenerationdate DESC LIMIT _limit OFFSET _offset
+) t;
+$$;
+
+
+ALTER FUNCTION public."getSaleLeads"(_limit integer, _offset integer, _startdate date, _enddate date, _location character varying) OWNER TO postgres;
+
+--
+-- TOC entry 278 (class 1255 OID 58950)
+-- Name: getSaleLeadsFeedback(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getSaleLeadsFeedback"(keystr character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(t) from (
+select description, followupdate AS "followUpDate", createddate AS "createdDate" from saleleadsfeedback
+	where saleleadsid = (select saleid from saleleads where leadid=keystr) 
+	ORDER BY salefbid DESC
+)t;
+$$;
+
+
+ALTER FUNCTION public."getSaleLeadsFeedback"(keystr character varying) OWNER TO postgres;
+
+--
+-- TOC entry 279 (class 1255 OID 58951)
+-- Name: getSaleWorkdayLeads(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getSaleWorkdayLeads"() RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(sl) from (
+	SELECT  societyname AS "societyName", leadname AS "leadName", mobile AS "mobile", bhk AS "bhk",
+	sqft AS "sqft", furnishedstatus AS "furnishedStatus", flatno AS "flatNo", wingno AS "wingNo",
+	poss AS "poss", createdby AS "createdBy", createddate AS "createdDate",
+	brokerage AS "brokerage", location AS "location", price AS "price", leadid AS "leadId", email AS "email",
+	"leadStatus", leadgenerationdate AS "leadGenerationDate" 
+	FROM saleleads WHERE "followUpDate" = CURRENT_DATE)sl;
+$$;
+
+
+ALTER FUNCTION public."getSaleWorkdayLeads"() OWNER TO postgres;
+
+--
+-- TOC entry 280 (class 1255 OID 58952)
+-- Name: getWorkdayLeads(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getWorkdayLeads"() RETURNS TABLE(saleleads json, resaleleads json, rentalleads json, plotleads json)
+    LANGUAGE sql
+    AS $$
+SELECT 	"getSaleWorkdayLeads"(),
+		"getResaleWorkdayLeads"(),
+		"getRentalWorkdayLeads"(),
+		"getPlotWorkdayLeads"();
+$$;
+
+
+ALTER FUNCTION public."getWorkdayLeads"() OWNER TO postgres;
+
+--
+-- TOC entry 281 (class 1255 OID 58953)
+-- Name: getYearPlot(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getYearPlot"() RETURNS TABLE(returnvalue text)
+    LANGUAGE sql
+    AS $$
+SELECT
+       split_part(DATE_TRUNC('year',leadgenerationdate)::TEXT,'-',1)
+         AS  "leadGenerationDate"
+FROM plotleads
+GROUP BY DATE_TRUNC('year',leadgenerationdate) 
+ORDER BY DATE_TRUNC('year',leadgenerationdate);
+$$;
+
+
+ALTER FUNCTION public."getYearPlot"() OWNER TO postgres;
+
+--
+-- TOC entry 282 (class 1255 OID 58954)
+-- Name: getYearRental(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getYearRental"() RETURNS TABLE(returnvalue text)
+    LANGUAGE sql
+    AS $$
+SELECT
+       split_part(DATE_TRUNC('year',leadgenerationdate)::TEXT,'-',1)
+         AS  "leadGenerationDate"
+FROM rentalleads
+GROUP BY DATE_TRUNC('year',leadgenerationdate) 
+ORDER BY DATE_TRUNC('year',leadgenerationdate);
+$$;
+
+
+ALTER FUNCTION public."getYearRental"() OWNER TO postgres;
+
+--
+-- TOC entry 283 (class 1255 OID 58955)
+-- Name: getYearResale(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getYearResale"() RETURNS TABLE(returnvalue text)
+    LANGUAGE sql
+    AS $$
+SELECT
+       split_part(DATE_TRUNC('year',leadgenerationdate)::TEXT,'-',1)
+         AS  "leadGenerationDate"
+FROM resaleleads
+GROUP BY DATE_TRUNC('year',leadgenerationdate) 
+ORDER BY DATE_TRUNC('year',leadgenerationdate);
+$$;
+
+
+ALTER FUNCTION public."getYearResale"() OWNER TO postgres;
+
+--
+-- TOC entry 284 (class 1255 OID 58956)
+-- Name: getYearSale(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."getYearSale"() RETURNS TABLE(returnvalue text)
+    LANGUAGE sql
+    AS $$
+SELECT
+       split_part(DATE_TRUNC('year',leadgenerationdate)::TEXT,'-',1)
+         AS  "leadGenerationDate"
+FROM saleleads
+GROUP BY DATE_TRUNC('year',leadgenerationdate) 
+ORDER BY DATE_TRUNC('year',leadgenerationdate);
+$$;
+
+
+ALTER FUNCTION public."getYearSale"() OWNER TO postgres;
+
+--
+-- TOC entry 242 (class 1255 OID 58957)
+-- Name: globalSearchLeads(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."globalSearchLeads"(_name character varying) RETURNS TABLE(saleleads json, resaleleads json, rentalleads json, plotleads json)
+    LANGUAGE sql
+    AS $$
+SELECT 	"searchSaleLeads"(_name),
+		"searchResaleLeads"(_name),
+		"searchRentalLeads"(_name),
+		"searchPlotLeads"(_name);
+$$;
+
+
+ALTER FUNCTION public."globalSearchLeads"(_name character varying) OWNER TO postgres;
+
+--
+-- TOC entry 243 (class 1255 OID 58958)
+-- Name: iviplotleads(); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.iviplotleads()
+    LANGUAGE sql
+    AS $$
+INSERT INTO plotleads
+SELECT * FROM tempplotleads;
+$$;
+
+
+ALTER PROCEDURE public.iviplotleads() OWNER TO postgres;
+
+--
+-- TOC entry 244 (class 1255 OID 58959)
+-- Name: ivirentalleads(); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.ivirentalleads()
+    LANGUAGE sql
+    AS $$
+INSERT INTO rentalleads
+SELECT * FROM temprentalleads;
+$$;
+
+
+ALTER PROCEDURE public.ivirentalleads() OWNER TO postgres;
+
+--
+-- TOC entry 245 (class 1255 OID 58960)
+-- Name: iviresaleleads(); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.iviresaleleads()
+    LANGUAGE sql
+    AS $$
+INSERT INTO resaleleads
+SELECT * FROM tempresaleleads;
+$$;
+
+
+ALTER PROCEDURE public.iviresaleleads() OWNER TO postgres;
+
+--
+-- TOC entry 246 (class 1255 OID 58961)
+-- Name: ivisaleleads(); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.ivisaleleads()
+    LANGUAGE sql
+    AS $$
+INSERT INTO saleleads
+SELECT * FROM tempsaleleads;
+$$;
+
+
+ALTER PROCEDURE public.ivisaleleads() OWNER TO postgres;
+
+--
+-- TOC entry 248 (class 1255 OID 58962)
+-- Name: plotLeadsDataEntry(json); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."plotLeadsDataEntry"(jsondata json)
+    LANGUAGE sql
+    AS $_$
+	DO $BODY$
+		DECLARE
+		i JSON;
+		BEGIN
+			FOR i IN SELECT * FROM json_array_elementI(jsondata) LOOP
+				INSERT INTO plotleads(
+				leadname,mobile,sqft,poss,createby,
+				location,leadgenerationdate,email)
+				VALUES (
+				i ->> 'leadname',i ->> 'mobile',i ->> 'sqft',
+				i ->> 'poss',i ->> 'createby',i ->> 'location',
+				i ->> 'leadgenerationdate',i ->> 'email');
+			END LOOP;
+		END;
+	$BODY$
+	LANGUAGE plpgsql;
+	UPDATE plotleads SET createddate = CURRENT_DATE;
+$_$;
+
+
+ALTER PROCEDURE public."plotLeadsDataEntry"(jsondata json) OWNER TO postgres;
+
+--
+-- TOC entry 254 (class 1255 OID 58963)
+-- Name: postedPlotPropsData(text, text, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."postedPlotPropsData"(_location text, _sqft text, _price text) RETURNS TABLE(record json)
+    LANGUAGE sql
+    AS $$
+SELECT row_to_json(plotdata) FROM (
+	SELECT "Location","Sqft","Brokerage", "Price" FROM "postedPlotProperties"
+	WHERE "Location"= _location AND ("Sqft"=_sqft AND "Price"=_Price))plotdata;
+$$;
+
+
+ALTER FUNCTION public."postedPlotPropsData"(_location text, _sqft text, _price text) OWNER TO postgres;
+
+--
+-- TOC entry 260 (class 1255 OID 58964)
+-- Name: postedPropertiesData(text, text, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."postedPropertiesData"(_location text, _bhk text, _price text) RETURNS TABLE(record json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(data) FROM (SELECT * FROM "postedProperties")data;
+$$;
+
+
+ALTER FUNCTION public."postedPropertiesData"(_location text, _bhk text, _price text) OWNER TO postgres;
+
+--
+-- TOC entry 285 (class 1255 OID 58965)
+-- Name: postedPropertyDataInsert(json); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."postedPropertyDataInsert"(jsondata json)
+    LANGUAGE sql
+    AS $_$
+	DO $BODY$
+			DECLARE
+			i JSON;
+			BEGIN
+				FOR i IN SELECT * FROM json_array_elementI(jsondata) LOOP
+					INSERT INTO "postedProperties"("Type","societyName","Location","Bhk","Sqft","FurnishedStatus",
+												    "floor","Price")
+					VALUES (
+					i ->> 'Type',i ->> 'societyName',i ->> 'Location',i ->> 'Bhk',i ->> 'Sqft',i ->> 'FurnishedStatus',
+					i ->> 'floor',i ->> 'Price');
+				END LOOP;
+			END;
+		$BODY$
+		LANGUAGE plpgsql;
+$_$;
+
+
+ALTER PROCEDURE public."postedPropertyDataInsert"(jsondata json) OWNER TO postgres;
+
+--
+-- TOC entry 286 (class 1255 OID 58966)
+-- Name: postedRentPropsData(text, text, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."postedRentPropsData"(_location text, _bhk text, _rent text) RETURNS TABLE(record json)
+    LANGUAGE sql
+    AS $$
+SELECT row_to_json(rentdata) FROM (
+	SELECT "societyName", "Location", "Bhk", "Sqft", "FurnishedStatus", "Floor", "FlatNo","WingNo",
+	"Rent","Deposit","Brokerage" FROM "postedRentProperties"
+	WHERE "Location"= _location AND ("Bhk"=_Bhk AND "Rent"=_Rent))rentdata;
+$$;
+
+
+ALTER FUNCTION public."postedRentPropsData"(_location text, _bhk text, _rent text) OWNER TO postgres;
+
+--
+-- TOC entry 287 (class 1255 OID 58967)
+-- Name: postedResalePropsData(text, text, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."postedResalePropsData"(_location text, _bhk text, _price text) RETURNS TABLE(record json)
+    LANGUAGE sql
+    AS $$
+SELECT row_to_json(resaledata) FROM (
+	SELECT "societyName", "Location", "Bhk", "Sqft", "FurnishedStatus", "Floor", "FlatNo","WingNo", "Brokerage", "Price"
+	FROM "postedResaleProperties"
+	WHERE "Location"= _location AND ("Bhk"=_Bhk AND "Price"=_Price))resaledata;
+$$;
+
+
+ALTER FUNCTION public."postedResalePropsData"(_location text, _bhk text, _price text) OWNER TO postgres;
+
+--
+-- TOC entry 288 (class 1255 OID 58968)
+-- Name: postedSalePropsData(text, text, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."postedSalePropsData"(_location text, _bhk text, _price text) RETURNS TABLE(record json)
+    LANGUAGE sql
+    AS $$
+SELECT row_to_json(saledata) FROM (
+	SELECT "societyName", "Location", "Bhk", "Sqft", "FurnishedStatus", "Floor", "FlatNo","WingNo", "Brokerage", "Price"
+	FROM "postedSaleProperties"
+	WHERE "Location"= _location AND ("Bhk"=_Bhk AND "Price"=_Price))saledata;
+$$;
+
+
+ALTER FUNCTION public."postedSalePropsData"(_location text, _bhk text, _price text) OWNER TO postgres;
+
+--
+-- TOC entry 289 (class 1255 OID 58969)
+-- Name: putPlotFeedback(character varying, text, character varying, date); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."putPlotFeedback"(_description character varying, _createdby text, _leadsid character varying, _followupdate date)
+    LANGUAGE sql
+    AS $$
+INSERT INTO plotleadsfeedback(
+	description,
+	createdby,
+	createddate,
+	plotid,
+	followupdate
+) 
+VALUES(
+	_description,
+	_createdby,
+	CURRENT_DATE,
+	(select plotid from plotleads where leadid = _leadsid),
+	_followupdate);
+	
+UPDATE plotleads SET "followUpDate" = _followupdate WHERE leadid = _leadsid;
+$$;
+
+
+ALTER PROCEDURE public."putPlotFeedback"(_description character varying, _createdby text, _leadsid character varying, _followupdate date) OWNER TO postgres;
+
+--
+-- TOC entry 290 (class 1255 OID 58970)
+-- Name: putRentalFeedback(character varying, text, character varying, date); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."putRentalFeedback"(_description character varying, _createdby text, _leadsid character varying, _followupdate date)
+    LANGUAGE sql
+    AS $$
+INSERT INTO rentalleadsfeedback(
+	description,
+	createdby,
+	createddate,
+	rentalleadsid,
+	followupdate
+) 
+VALUES(
+	_description,
+	_createdby,
+	CURRENT_DATE,
+	(select rentalid from rentalleads where leadid = _leadsid),
+	_followupdate);
+	
+UPDATE rentalleads SET "followUpDate" = _followupdate WHERE leadid = _leadsid;
+$$;
+
+
+ALTER PROCEDURE public."putRentalFeedback"(_description character varying, _createdby text, _leadsid character varying, _followupdate date) OWNER TO postgres;
+
+--
+-- TOC entry 291 (class 1255 OID 58971)
+-- Name: putResaleFeedback(character varying, text, character varying, date); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."putResaleFeedback"(_description character varying, _createdby text, _leadsid character varying, _followupdate date)
+    LANGUAGE sql
+    AS $$
+INSERT INTO resaleleadsfeedback(
+	description,
+	createdby,
+	createddate,
+	resaleleadsid,
+	followupdate
+) 
+VALUES(
+	_description,
+	_createdby,
+	CURRENT_DATE,
+	(select resaleid from resaleleads where leadid = _leadsid),
+	_followupdate);
+	
+UPDATE resaleleads SET "followUpDate" = _followupdate WHERE leadid = _leadsid;
+$$;
+
+
+ALTER PROCEDURE public."putResaleFeedback"(_description character varying, _createdby text, _leadsid character varying, _followupdate date) OWNER TO postgres;
+
+--
+-- TOC entry 292 (class 1255 OID 58972)
+-- Name: putSaleFeedback(character varying, text, character varying, date); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."putSaleFeedback"(_description character varying, _createdby text, _leadsid character varying, _followupdate date)
+    LANGUAGE sql
+    AS $$
+INSERT INTO saleleadsfeedback(
+	description,
+	createdby,
+	createddate,
+	saleleadsid,
+	followupdate
+) 
+VALUES(
+	_description,
+	_createdby,
+	CURRENT_DATE,
+	(select saleid from saleleads where leadid = _leadsid),
+	_followupdate);
+	
+UPDATE saleleads SET "followUpDate" = _followupdate WHERE leadid = _leadsid;
+$$;
+
+
+ALTER PROCEDURE public."putSaleFeedback"(_description character varying, _createdby text, _leadsid character varying, _followupdate date) OWNER TO postgres;
+
+--
+-- TOC entry 293 (class 1255 OID 58973)
+-- Name: put_user(text, text, text, text, date, date, text, date, text, integer); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.put_user(_username text, _userpassword text, _createdby text, _updatedby text, _createddate date, _updateddate date, _isdeleted text, _deleteddate date, _deletedby text, _roleid integer)
+    LANGUAGE sql
+    AS $$
+    INSERT INTO users(
+		username,
+		userpassword,
+		createdby,
+		updatedby,
+		createddate,
+		updateddate,
+		isdeleted,
+		deletedby,
+		deleteddate,
+		roleid
+	)
+    VALUES(
+		_username,
+		_userpassword,
+		_createdby,
+		_updatedby,
+		_createddate,
+		_updateddate,
+		_isdeleted,
+		_deletedby,
+		_deleteddate,
+		_roleid);   
+$$;
+
+
+ALTER PROCEDURE public.put_user(_username text, _userpassword text, _createdby text, _updatedby text, _createddate date, _updateddate date, _isdeleted text, _deleteddate date, _deletedby text, _roleid integer) OWNER TO postgres;
+
+--
+-- TOC entry 294 (class 1255 OID 58974)
+-- Name: rentalLeadsDataEntry(json); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."rentalLeadsDataEntry"(jsondata json)
+    LANGUAGE sql
+    AS $_$
+	DO $BODY$
+		DECLARE
+		i JSON;
+		BEGIN
+			FOR i IN SELECT * FROM json_array_elementI(jsondata) LOOP
+				INSERT INTO rentalleads(
+				societyname,leadname,mobile,bhk,sqft,rent,deposit,furnishedstatus,flatno,wingno,floor,poss,createdby,
+				location,leadgenerationdate,email)
+				VALUES (
+				i ->> 'societyname',i ->> 'leadname',i ->> 'mobile',i ->> 'bhk',i ->> 'sqft',i ->> 'rent',
+				i ->> 'deposit',i ->> 'furnishedstatus',i ->> 'flatno',
+				i ->> 'wingno',i ->> 'floor',i ->> 'poss',i ->> 'createdby',i ->> 'location',
+				i ->> 'leadgenerationdate',i ->> 'email');
+			END LOOP;
+		END;
+	$BODY$
+	LANGUAGE plpgsql;
+	UPDATE rentalleads SET createddate = CURRENT_DATE;
+$_$;
+
+
+ALTER PROCEDURE public."rentalLeadsDataEntry"(jsondata json) OWNER TO postgres;
+
+--
+-- TOC entry 295 (class 1255 OID 58975)
+-- Name: resaleLeadsDataEntry(json); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."resaleLeadsDataEntry"(jsondata json)
+    LANGUAGE sql
+    AS $_$
+	DO $BODY$
+		DECLARE
+		i JSON;
+		BEGIN
+			FOR i IN SELECT * FROM json_array_elementI(jsondata) LOOP
+				INSERT INTO resaleleads(
+				societyname,leadname,mobile,bhk,sqft,floor,furnishedstatus,flatno,wingno,poss,createdby,
+				location,price,leadgenerationdate,email)
+				VALUES (
+				i ->> 'societyname',i ->> 'leadname',i ->> 'mobile',i ->> 'bhk',i ->> 'sqft',
+				i ->> 'floor',i ->> 'furnishedstatus',
+				i ->> 'flatno',i ->> 'wingno',i ->> 'poss',i ->> 'createdby',i ->> 'location',i ->> 'price',
+				i ->> 'leadgenerationdate',i ->> 'email');
+			END LOOP;
+		END;
+	$BODY$
+	LANGUAGE plpgsql;
+	UPDATE resaleleads SET createddate = CURRENT_DATE;
+$_$;
+
+
+ALTER PROCEDURE public."resaleLeadsDataEntry"(jsondata json) OWNER TO postgres;
+
+--
+-- TOC entry 296 (class 1255 OID 58976)
+-- Name: saleLeadsDataEntry(json); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."saleLeadsDataEntry"(jsondata json)
+    LANGUAGE sql
+    AS $_$
+	DO $BODY$
+		DECLARE
+		i JSON;
+		BEGIN
+			FOR i IN SELECT * FROM json_array_elementI(jsondata) LOOP
+				INSERT INTO saleleads(
+				societyname,leadname,mobile,bhk,sqft,furnishedstatus,flatno,wingno,poss,createdby,
+				location,price,leadgenerationdate,email)
+				VALUES (
+				i ->> 'societyname',i ->> 'leadname',i ->> 'mobile',i ->> 'bhk',i ->> 'sqft',i ->> 'furnishedstatus',
+				i ->> 'flatno',i ->> 'wingno',i ->> 'poss',i ->> 'createdby',i ->> 'location',i ->> 'price',
+				i ->> 'leadgenerationdate',i ->> 'email');
+			END LOOP;
+		END;
+	$BODY$
+	LANGUAGE plpgsql;
+	UPDATE saleleads SET createddate = CURRENT_DATE;
+$_$;
+
+
+ALTER PROCEDURE public."saleLeadsDataEntry"(jsondata json) OWNER TO postgres;
+
+--
+-- TOC entry 297 (class 1255 OID 58977)
+-- Name: searchPlotLeads(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."searchPlotLeads"(_name character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(pl) from (
+	SELECT leadname AS "leadName", mobile AS "mobile" , sqft AS "sqft", poss AS "poss", createby AS "createBy",
+	createddate AS "createdDate",updatedby AS "updatedBy", updateddate AS "updatedDate", brokerage AS "brokerage", 
+	location AS "location", price AS "price", leadid AS "leadId", "leadStatus", leadgenerationdate AS "leadGenerationDate"
+	FROM plotleads WHERE (location || leadname || mobile || "leadStatus" || leadgenerationdate) ilike  CONCAT('%',_name, '%')
+)pl;
+$$;
+
+
+ALTER FUNCTION public."searchPlotLeads"(_name character varying) OWNER TO postgres;
+
+--
+-- TOC entry 298 (class 1255 OID 58978)
+-- Name: searchRentalLeads(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."searchRentalLeads"(_name character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(rnl) from (
+	SELECT societyname AS "societyName", leadname AS "leadName", mobile AS "mobile", bhk AS "bhk", sqft AS "sqft",
+	rent AS "rent", deposit AS "deposit", furnishedstatus AS "furnishedStatus", availablefor AS "available",
+	flatno AS "flatNo", wingno AS "wingNo", poss AS "poss", createdby AS "createdBy", createddate AS "createdDate",
+	updateddate AS "updatedDate",updatedby AS "updatedBy", brokerage AS "brokerage", location AS "location",
+	leadid AS "leadId", "leadStatus", leadgenerationdate AS "leadGenerationDate"  
+	FROM rentalleads WHERE (societyname || leadname || mobile || "leadStatus" || leadgenerationdate) ilike  CONCAT('%',_name, '%'))rnl;
+$$;
+
+
+ALTER FUNCTION public."searchRentalLeads"(_name character varying) OWNER TO postgres;
+
+--
+-- TOC entry 299 (class 1255 OID 58979)
+-- Name: searchResaleLeads(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."searchResaleLeads"(_name character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(rsl) from (
+	SELECT  societyname AS "societyName", leadname AS "leadName", mobile AS "mobile", bhk AS "bhk",
+	sqft AS "sqft", floor AS "floor", furnishedstatus AS "furnishedStatus", flatno AS "flatNo", wingno AS "wingNo",
+	poss AS "poss", createdby AS "createdBy", createddate AS "createdDate",
+	brokerage AS "brokerage", location AS "location", price AS "price", leadid AS "leadId",
+	"leadStatus" ,leadgenerationdate AS "leadGenerationDate"
+	FROM resaleleads WHERE (societyname || leadname || mobile || "leadStatus" || leadgenerationdate) ilike  CONCAT('%',_name, '%'))rsl;
+$$;
+
+
+ALTER FUNCTION public."searchResaleLeads"(_name character varying) OWNER TO postgres;
+
+--
+-- TOC entry 300 (class 1255 OID 58980)
+-- Name: searchSaleLeads(character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public."searchSaleLeads"(_name character varying) RETURNS TABLE(returnvalue json)
+    LANGUAGE sql
+    AS $$
+select row_to_json(sl) from (
+	SELECT  societyname AS "societyName", leadname AS "leadName", mobile AS "mobile", bhk AS "bhk",
+	sqft AS "sqft", furnishedstatus AS "furnishedStatus", flatno AS "flatNo", wingno AS "wingNo",
+	poss AS "poss", createdby AS "createdBy", createddate AS "createdDate",
+	brokerage AS "brokerage", location AS "location", price AS "price", leadid AS "leadId",
+	"leadStatus", leadgenerationdate AS "leadGenerationDate" 
+	FROM saleleads 
+	WHERE (societyname || leadname || mobile || "leadStatus" || leadgenerationdate) ilike  CONCAT('%',_name, '%'))sl;
+$$;
+
+
+ALTER FUNCTION public."searchSaleLeads"(_name character varying) OWNER TO postgres;
+
+--
+-- TOC entry 301 (class 1255 OID 58981)
+-- Name: tempEntry(); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."tempEntry"()
+    LANGUAGE sql
+    AS $_$
+	DO $BODY$
+			DECLARE
+				tempjson json := '[{"saleid":"1","societyname":"Shubh Gateway","ownername":"Sakshi Singh","mobile":"7020644020","bhk":"2 BHK 3 BHK 3+ BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Viman Nagar","price":"1.1 Cr-1.76 Cr","leadid":"0a38bf7e-7332-0aec-32aa-6197c76a64c3","leadgenerationdate":"2021-09-10"},{"saleid":"2","societyname":"Shubh Gateway","ownername":"Rushabh Shingvi","mobile":"9623907454","bhk":"2 BHK 3 BHK 3+ BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Viman Nagar","price":"1.1 Cr-1.76 Cr","leadid":"1031d668-f7cc-8d9b-4c10-b2050333ea87","leadgenerationdate":"2021-09-10"},{"saleid":"3","societyname":"Goel Ganga Newtown Phase 2","ownername":"Swapnil Chaudhari","mobile":"7028028138","bhk":"1 BHK 2 BHK 2 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Dhanori","price":"36.44 L-68.71 L","leadid":"ce0cb7ed-9b5a-681a-419d-bf11e6a25479","leadgenerationdate":"2021-10-10"},{"saleid":"4","societyname":"Geras World of Joy L","ownername":"Deepali","mobile":"7972937181","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"d01c4354-abfb-8c8a-93d6-3dcdc355fe3c","leadgenerationdate":"2021-10-10"},{"saleid":"5","societyname":"Geras World of Joy L","ownername":"Yogesh","mobile":"9373251107","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"4d10af14-4ca5-7821-99aa-dcd462a98e9d","leadgenerationdate":"2021-10-10"},{"saleid":"6","societyname":"Shubh Gateway","ownername":"archana","mobile":"9096795981","bhk":"3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Viman Nagar","price":"1.4 Cr-1.54 Cr","leadid":"ee5f8e23-5dd4-0b0a-f444-089475722e8c","leadgenerationdate":"2021-10-10"},{"saleid":"7","societyname":"Shubh Gateway","ownername":"Sachin Yelwande","mobile":"8983712712","bhk":"2 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Viman Nagar","price":"1.1 Cr-1.18 Cr","leadid":"2037b946-9ffa-1f3a-e4d7-16d488751b51","leadgenerationdate":"2021-10-10"},{"saleid":"8","societyname":"Geras World of Joy L","ownername":"Shraddha","mobile":"9028243692","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"1d0cc35b-08fd-64e2-e845-c6c315391b28","leadgenerationdate":"2021-11-10"},{"saleid":"9","societyname":"Geras World of Joy L","ownername":"Swapnil  ware","mobile":"7219713907","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"807c18ba-824a-8e4f-1fd1-0d24ebc15232","leadgenerationdate":"2021-11-10"},{"saleid":"10","societyname":"Geras World of Joy L","ownername":"Rohan Navgire","mobile":"9881116174","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"d7a247f1-e19b-ba0b-9d0c-e015ee88063d","leadgenerationdate":"2021-12-10"}]';
+				i json;
+			BEGIN
+			  FOR i IN SELECT * FROM json_array_elements(tempjson)
+			  LOOP
+				RAISE NOTICE 'output from space %', i->>'societyname';
+-- 				INSERT INTO tempsaleleads (saleid) VALUES ((SELECT CAST (i->>'societyname' AS integer)));
+				INSERT INTO tempsaleleads (societyname) VALUES (i->>'societyname');
+			  END LOOP;
+			END;
+		$BODY$ language plpgsql
+$_$;
+
+
+ALTER PROCEDURE public."tempEntry"() OWNER TO postgres;
+
+--
+-- TOC entry 302 (class 1255 OID 58982)
+-- Name: tempEntry(json); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."tempEntry"(filedata json)
+    LANGUAGE sql
+    AS $_$
+	DO $BODY$
+			DECLARE
+				tempjson json := filedata;
+				i json;
+			BEGIN
+			  FOR i IN SELECT * FROM json_array_elements(tempjson)
+			  LOOP
+				RAISE NOTICE 'output from space %', i->>'saleid';
+-- 				INSERT INTO tempsaleleads VALUES ("saleId" ->> 'saleid');
+			  END LOOP;
+			END;
+		$BODY$ language plpgsql
+$_$;
+
+
+ALTER PROCEDURE public."tempEntry"(filedata json) OWNER TO postgres;
+
+--
+-- TOC entry 303 (class 1255 OID 58983)
+-- Name: tempEntry(text); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."tempEntry"(tempjson text)
+    LANGUAGE sql
+    AS $_$
+	DO $BODY$
+			DECLARE
+-- 				tempjson json := '[{"saleid":"1","societyname":"Shubh Gateway","ownername":"Sakshi Singh","mobile":"7020644020","bhk":"2 BHK 3 BHK 3+ BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Viman Nagar","price":"1.1 Cr-1.76 Cr","leadid":"0a38bf7e-7332-0aec-32aa-6197c76a64c3","leadgenerationdate":"2021-09-10"},{"saleid":"2","societyname":"Shubh Gateway","ownername":"Rushabh Shingvi","mobile":"9623907454","bhk":"2 BHK 3 BHK 3+ BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Viman Nagar","price":"1.1 Cr-1.76 Cr","leadid":"1031d668-f7cc-8d9b-4c10-b2050333ea87","leadgenerationdate":"2021-09-10"},{"saleid":"3","societyname":"Goel Ganga Newtown Phase 2","ownername":"Swapnil Chaudhari","mobile":"7028028138","bhk":"1 BHK 2 BHK 2 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Dhanori","price":"36.44 L-68.71 L","leadid":"ce0cb7ed-9b5a-681a-419d-bf11e6a25479","leadgenerationdate":"2021-10-10"},{"saleid":"4","societyname":"Geras World of Joy L","ownername":"Deepali","mobile":"7972937181","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"d01c4354-abfb-8c8a-93d6-3dcdc355fe3c","leadgenerationdate":"2021-10-10"},{"saleid":"5","societyname":"Geras World of Joy L","ownername":"Yogesh","mobile":"9373251107","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"4d10af14-4ca5-7821-99aa-dcd462a98e9d","leadgenerationdate":"2021-10-10"},{"saleid":"6","societyname":"Shubh Gateway","ownername":"archana","mobile":"9096795981","bhk":"3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Viman Nagar","price":"1.4 Cr-1.54 Cr","leadid":"ee5f8e23-5dd4-0b0a-f444-089475722e8c","leadgenerationdate":"2021-10-10"},{"saleid":"7","societyname":"Shubh Gateway","ownername":"Sachin Yelwande","mobile":"8983712712","bhk":"2 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Viman Nagar","price":"1.1 Cr-1.18 Cr","leadid":"2037b946-9ffa-1f3a-e4d7-16d488751b51","leadgenerationdate":"2021-10-10"},{"saleid":"8","societyname":"Geras World of Joy L","ownername":"Shraddha","mobile":"9028243692","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"1d0cc35b-08fd-64e2-e845-c6c315391b28","leadgenerationdate":"2021-11-10"},{"saleid":"9","societyname":"Geras World of Joy L","ownername":"Swapnil  ware","mobile":"7219713907","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"807c18ba-824a-8e4f-1fd1-0d24ebc15232","leadgenerationdate":"2021-11-10"},{"saleid":"10","societyname":"Geras World of Joy L","ownername":"Rohan Navgire","mobile":"9881116174","bhk":"1 RK 2 BHK 3 BHK","sqft":"","furnishedstatus":"unfurnished","flatno":"","wingno":"","poss":"","createdby":"lubhan","createddate":"2022-09-01","updatedby":"lubhan","updateddate":"","isdeleted":"FALSE","deletedddate":"","deletedby":"","userid":"1","brokerage":"","location":"Kharadi","price":"33.0 L-1.18 Cr","leadid":"d7a247f1-e19b-ba0b-9d0c-e015ee88063d","leadgenerationdate":"2021-12-10"}]';
+				i json;
+			BEGIN
+			  FOR i IN SELECT * FROM json_array_elements(tempjson)
+			  LOOP
+				RAISE NOTICE 'output from space %', i->>'societyname';
+-- 				INSERT INTO tempsaleleads (saleid) VALUES ((SELECT CAST (i->>'societyname' AS integer)));
+				INSERT INTO tempsaleleads (societyname) VALUES (i->>'societyname');
+			  END LOOP;
+			END;
+		$BODY$ language plpgsql
+$_$;
+
+
+ALTER PROCEDURE public."tempEntry"(tempjson text) OWNER TO postgres;
+
+--
+-- TOC entry 304 (class 1255 OID 58984)
+-- Name: updatePlotBrokerage(character varying, integer, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updatePlotBrokerage"(updateby character varying, newvalue integer, keystr character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE plotleads SET brokerage = newValue, updateddate = CURRENT_DATE, updatedby = updateby WHERE leadid = keystr;
+$$;
+
+
+ALTER PROCEDURE public."updatePlotBrokerage"(updateby character varying, newvalue integer, keystr character varying) OWNER TO postgres;
+
+--
+-- TOC entry 272 (class 1255 OID 58985)
+-- Name: updatePlotDeleteValue(character varying, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updatePlotDeleteValue"(_leadid character varying, _deletedby character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE plotleads SET isdeleted = 'true', deleteby = _deletedby, deletedate = CURRENT_DATE WHERE leadid = _leadid
+$$;
+
+
+ALTER PROCEDURE public."updatePlotDeleteValue"(_leadid character varying, _deletedby character varying) OWNER TO postgres;
+
+--
+-- TOC entry 233 (class 1255 OID 58986)
+-- Name: updatePlotLeadStatus(character varying, character varying, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updatePlotLeadStatus"(_updateby character varying, _leadstatus character varying, _leadid character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE plotleads SET "leadStatus" = _leadstatus, updatedby = _updateby, updateddate = CURRENT_DATE WHERE leadid = _leadid;
+$$;
+
+
+ALTER PROCEDURE public."updatePlotLeadStatus"(_updateby character varying, _leadstatus character varying, _leadid character varying) OWNER TO postgres;
+
+--
+-- TOC entry 247 (class 1255 OID 58987)
+-- Name: updateRentalBrokerage(character varying, integer, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updateRentalBrokerage"(updateby character varying, newvalue integer, keystr character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE rentalleads SET brokerage = newValue, updateddate = CURRENT_DATE, updatedby = updateby WHERE leadid = keystr;
+$$;
+
+
+ALTER PROCEDURE public."updateRentalBrokerage"(updateby character varying, newvalue integer, keystr character varying) OWNER TO postgres;
+
+--
+-- TOC entry 241 (class 1255 OID 58988)
+-- Name: updateRentalDeleteValue(character varying, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updateRentalDeleteValue"(_leadid character varying, _deletedby character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE rentalleads SET isdeleted = 'true', deleteby = _deletedby, deletedate = CURRENT_DATE WHERE leadid = _leadid
+$$;
+
+
+ALTER PROCEDURE public."updateRentalDeleteValue"(_leadid character varying, _deletedby character varying) OWNER TO postgres;
+
+--
+-- TOC entry 305 (class 1255 OID 58989)
+-- Name: updateRentalLeadStatus(character varying, character varying, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updateRentalLeadStatus"(_updateby character varying, _leadstatus character varying, _leadid character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE rentalleads SET "leadStatus" = _leadstatus, updatedby = _updateby, updateddate = current_date WHERE leadid = _leadid;
+$$;
+
+
+ALTER PROCEDURE public."updateRentalLeadStatus"(_updateby character varying, _leadstatus character varying, _leadid character varying) OWNER TO postgres;
+
+--
+-- TOC entry 306 (class 1255 OID 58990)
+-- Name: updateResaleBrokerage(character varying, integer, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updateResaleBrokerage"(updateby character varying, newvalue integer, keystr character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE resaleleads SET brokerage = newValue, updateddate = CURRENT_DATE, updatedby = updateby WHERE leadid = keystr;
+$$;
+
+
+ALTER PROCEDURE public."updateResaleBrokerage"(updateby character varying, newvalue integer, keystr character varying) OWNER TO postgres;
+
+--
+-- TOC entry 307 (class 1255 OID 58991)
+-- Name: updateResaleDeleteValue(character varying, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updateResaleDeleteValue"(_leadid character varying, _deletedby character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE resaleleads 
+	SET isdeleted = 'true', deleteby = _deletedby, deletedate = CURRENT_DATE
+WHERE leadid = _leadid;
+$$;
+
+
+ALTER PROCEDURE public."updateResaleDeleteValue"(_leadid character varying, _deletedby character varying) OWNER TO postgres;
+
+--
+-- TOC entry 308 (class 1255 OID 58992)
+-- Name: updateResaleLeadStatus(character varying, character varying, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updateResaleLeadStatus"(_updateby character varying, _leadstatus character varying, _leadid character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE resaleleads SET "leadStatus" = _leadstatus, updatedby = _updateby, updateddate = current_date WHERE leadid = _leadid;
+$$;
+
+
+ALTER PROCEDURE public."updateResaleLeadStatus"(_updateby character varying, _leadstatus character varying, _leadid character varying) OWNER TO postgres;
+
+--
+-- TOC entry 309 (class 1255 OID 58993)
+-- Name: updateSaleBrokerage(character varying, integer, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updateSaleBrokerage"(updateby character varying, newvalue integer, keystr character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE saleleads SET brokerage = newValue, updateddate = CURRENT_DATE, updatedby = updateby WHERE leadid = keystr;
+$$;
+
+
+ALTER PROCEDURE public."updateSaleBrokerage"(updateby character varying, newvalue integer, keystr character varying) OWNER TO postgres;
+
+--
+-- TOC entry 310 (class 1255 OID 58994)
+-- Name: updateSaleDeleteValue(character varying, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updateSaleDeleteValue"(_leadid character varying, _deletedby character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE saleleads SET isdeleted = 'true', deleteby = _deletedby, deletedate = CURRENT_DATE WHERE leadid = _leadid
+$$;
+
+
+ALTER PROCEDURE public."updateSaleDeleteValue"(_leadid character varying, _deletedby character varying) OWNER TO postgres;
+
+--
+-- TOC entry 311 (class 1255 OID 58995)
+-- Name: updateSaleLeadStatus(character varying, character varying, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public."updateSaleLeadStatus"(_updateby character varying, _status character varying, _leadid character varying)
+    LANGUAGE sql
+    AS $$
+UPDATE saleleads SET "leadStatus" = _status, updatedby = _updateby, updateddate = CURRENT_DATE WHERE leadid = _leadid;
+$$;
+
+
+ALTER PROCEDURE public."updateSaleLeadStatus"(_updateby character varying, _status character varying, _leadid character varying) OWNER TO postgres;
+
+--
+-- TOC entry 312 (class 1255 OID 58996)
+-- Name: usersrolejoin(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.usersrolejoin() RETURNS TABLE(username text, rolename text)
+    LANGUAGE sql
+    AS $$                                                                                
+    SELECT users.username, roles.rolename FROM users
+	LEFT JOIN roles ON users.userid = roles.roleid;                                                                      
+$$;
+
+
+ALTER FUNCTION public.usersrolejoin() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 201 (class 1259 OID 59005)
+-- Name: apiLogs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."apiLogs" (
+    "logId" integer NOT NULL,
+    description character varying,
+    "apiUrl" character varying,
+    "requestObjects" character varying,
+    "createdBy" character varying,
+    "createdDate" date,
+    "isDelete" character varying
+);
+
+
+ALTER TABLE public."apiLogs" OWNER TO postgres;
+
+--
+-- TOC entry 202 (class 1259 OID 59011)
+-- Name: apiLogs_logId_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."apiLogs_logId_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."apiLogs_logId_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3202 (class 0 OID 0)
+-- Dependencies: 202
+-- Name: apiLogs_logId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."apiLogs_logId_seq" OWNED BY public."apiLogs"."logId";
+
+
+--
+-- TOC entry 203 (class 1259 OID 59021)
+-- Name: plotleads; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.plotleads (
+    plotid integer NOT NULL,
+    leadname character varying,
+    mobile bigint,
+    sqft character varying,
+    poss character varying,
+    createby character varying,
+    createddate date,
+    updatedby character varying,
+    updateddate date,
+    isdeleted boolean,
+    deleteby character varying,
+    deletedate date,
+    "assignedTo" integer,
+    brokerage integer,
+    location character varying,
+    price character varying,
+    leadid character varying,
+    leadgenerationdate date,
+    "leadStatus" character varying,
+    "followUpDate" date,
+    email character varying,
+    "PropertyId" character varying
+);
+
+
+ALTER TABLE public.plotleads OWNER TO postgres;
+
+--
+-- TOC entry 204 (class 1259 OID 59027)
+-- Name: plotleads_plotid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.plotleads_plotid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.plotleads_plotid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3203 (class 0 OID 0)
+-- Dependencies: 204
+-- Name: plotleads_plotid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.plotleads_plotid_seq OWNED BY public.plotleads.plotid;
+
+
+--
+-- TOC entry 205 (class 1259 OID 59029)
+-- Name: plotleadsfeedback; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.plotleadsfeedback (
+    plotfbid integer NOT NULL,
+    createdby character varying,
+    createddate date,
+    updatedby character varying,
+    updateddate date,
+    description character varying,
+    isdeleted character varying,
+    deleteby character varying,
+    deletedate date,
+    plotid integer,
+    followupdate date
+);
+
+
+ALTER TABLE public.plotleadsfeedback OWNER TO postgres;
+
+--
+-- TOC entry 206 (class 1259 OID 59035)
+-- Name: plotleadsfeedback_plotfbid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.plotleadsfeedback_plotfbid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.plotleadsfeedback_plotfbid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3204 (class 0 OID 0)
+-- Dependencies: 206
+-- Name: plotleadsfeedback_plotfbid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.plotleadsfeedback_plotfbid_seq OWNED BY public.plotleadsfeedback.plotfbid;
+
+
+--
+-- TOC entry 207 (class 1259 OID 59075)
+-- Name: rentalleads; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.rentalleads (
+    rentalid integer NOT NULL,
+    societyname character varying,
+    leadname character varying,
+    mobile bigint,
+    bhk character varying,
+    sqft character varying,
+    rent character varying,
+    deposit character varying,
+    furnishedstatus character varying,
+    availablefor character varying,
+    flatno character varying,
+    wingno character varying,
+    floor character varying,
+    poss character varying,
+    createdby character varying,
+    createddate date,
+    updateddate date,
+    updatedby character varying,
+    isdeleted boolean,
+    deletedate date,
+    deleteby character varying,
+    "assignedTo" integer,
+    brokerage integer,
+    location character varying,
+    leadid character varying,
+    leadgenerationdate date,
+    "leadStatus" character varying,
+    "followUpDate" date,
+    email character varying,
+    "PropertyId" character varying
+);
+
+
+ALTER TABLE public.rentalleads OWNER TO postgres;
+
+--
+-- TOC entry 208 (class 1259 OID 59081)
+-- Name: rentalleads_rentalid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.rentalleads_rentalid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.rentalleads_rentalid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3205 (class 0 OID 0)
+-- Dependencies: 208
+-- Name: rentalleads_rentalid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.rentalleads_rentalid_seq OWNED BY public.rentalleads.rentalid;
+
+
+--
+-- TOC entry 209 (class 1259 OID 59083)
+-- Name: rentalleadsfeedback; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.rentalleadsfeedback (
+    rentalfbid integer NOT NULL,
+    description character varying,
+    createdby character varying,
+    createddate date,
+    updatedby character varying,
+    updateddate date,
+    isdeleted character varying,
+    deletedate date,
+    deleteby character varying,
+    rentalleadsid integer,
+    followupdate date
+);
+
+
+ALTER TABLE public.rentalleadsfeedback OWNER TO postgres;
+
+--
+-- TOC entry 210 (class 1259 OID 59089)
+-- Name: rentalleadsfeedback_rentalfbid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.rentalleadsfeedback_rentalfbid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.rentalleadsfeedback_rentalfbid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3206 (class 0 OID 0)
+-- Dependencies: 210
+-- Name: rentalleadsfeedback_rentalfbid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.rentalleadsfeedback_rentalfbid_seq OWNED BY public.rentalleadsfeedback.rentalfbid;
+
+
+--
+-- TOC entry 211 (class 1259 OID 59091)
+-- Name: resaleleads; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.resaleleads (
+    resaleid integer NOT NULL,
+    societyname character varying,
+    leadname character varying,
+    mobile bigint,
+    bhk character varying,
+    sqft character varying,
+    floor character varying,
+    furnishedstatus character varying,
+    flatno character varying,
+    wingno character varying,
+    poss character varying,
+    createdby character varying,
+    createddate date,
+    updatedby character varying,
+    updateddate date,
+    isdeleted boolean,
+    deleteby character varying,
+    deletedate date,
+    "assignedTo" integer,
+    brokerage integer,
+    location character varying,
+    price character varying,
+    leadid character varying,
+    leadgenerationdate date,
+    "leadStatus" character varying,
+    "followUpDate" date,
+    email character varying,
+    "PropertyId" character varying
+);
+
+
+ALTER TABLE public.resaleleads OWNER TO postgres;
+
+--
+-- TOC entry 212 (class 1259 OID 59097)
+-- Name: resaleleads_resaleid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.resaleleads_resaleid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.resaleleads_resaleid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3207 (class 0 OID 0)
+-- Dependencies: 212
+-- Name: resaleleads_resaleid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.resaleleads_resaleid_seq OWNED BY public.resaleleads.resaleid;
+
+
+--
+-- TOC entry 213 (class 1259 OID 59099)
+-- Name: resaleleadsfeedback; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.resaleleadsfeedback (
+    resalefbid integer NOT NULL,
+    description character varying,
+    createdby character varying,
+    createddate date,
+    updatedby character varying,
+    updateddate date,
+    isdeleted character varying,
+    deleteby character varying,
+    deletedate date,
+    resaleleadsid integer,
+    followupdate date
+);
+
+
+ALTER TABLE public.resaleleadsfeedback OWNER TO postgres;
+
+--
+-- TOC entry 214 (class 1259 OID 59105)
+-- Name: resaleleadsfeedback_resalefbid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.resaleleadsfeedback_resalefbid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.resaleleadsfeedback_resalefbid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3208 (class 0 OID 0)
+-- Dependencies: 214
+-- Name: resaleleadsfeedback_resalefbid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.resaleleadsfeedback_resalefbid_seq OWNED BY public.resaleleadsfeedback.resalefbid;
+
+
+--
+-- TOC entry 215 (class 1259 OID 59107)
+-- Name: roles; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.roles (
+    roleid integer NOT NULL,
+    rolename character varying
+);
+
+
+ALTER TABLE public.roles OWNER TO postgres;
+
+--
+-- TOC entry 216 (class 1259 OID 59113)
+-- Name: roles_roleid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.roles_roleid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.roles_roleid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3209 (class 0 OID 0)
+-- Dependencies: 216
+-- Name: roles_roleid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.roles_roleid_seq OWNED BY public.roles.roleid;
+
+
+--
+-- TOC entry 217 (class 1259 OID 59115)
+-- Name: saleleads; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.saleleads (
+    saleid integer NOT NULL,
+    societyname character varying,
+    leadname character varying,
+    mobile bigint,
+    bhk character varying,
+    sqft character varying,
+    furnishedstatus character varying,
+    flatno character varying,
+    wingno character varying,
+    poss character varying,
+    createdby character varying,
+    createddate date,
+    updatedby character varying,
+    updateddate date,
+    isdeleted boolean,
+    deletedate date,
+    deleteby character varying,
+    "assignedTo" integer,
+    brokerage integer,
+    location character varying,
+    price character varying,
+    leadid character varying DEFAULT public.uuid_generate_v4(),
+    leadgenerationdate date,
+    "leadStatus" character varying,
+    "followUpDate" date,
+    email character varying,
+    "PropertyId" character varying
+);
+
+
+ALTER TABLE public.saleleads OWNER TO postgres;
+
+--
+-- TOC entry 218 (class 1259 OID 59122)
+-- Name: saleleads_saleid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.saleleads_saleid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.saleleads_saleid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3210 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: saleleads_saleid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.saleleads_saleid_seq OWNED BY public.saleleads.saleid;
+
+
+--
+-- TOC entry 219 (class 1259 OID 59124)
+-- Name: saleleadsfeedback; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.saleleadsfeedback (
+    salefbid integer NOT NULL,
+    description character varying,
+    createdby character varying,
+    createddate date,
+    updatedby character varying,
+    updateddate date,
+    isdeleted character varying,
+    deleteddate date,
+    deleteby character varying,
+    saleleadsid integer,
+    followupdate date
+);
+
+
+ALTER TABLE public.saleleadsfeedback OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 59130)
+-- Name: saleleadsfeedback_salefbid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.saleleadsfeedback_salefbid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.saleleadsfeedback_salefbid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3211 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: saleleadsfeedback_salefbid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.saleleadsfeedback_salefbid_seq OWNED BY public.saleleadsfeedback.salefbid;
+
+
+--
+-- TOC entry 221 (class 1259 OID 59158)
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.users (
+    userid integer NOT NULL,
+    username character varying,
+    userpassword character varying,
+    createdby character varying,
+    updatedby character varying,
+    createddate date,
+    updateddate date,
+    isdeleted character varying,
+    deletedby character varying,
+    deleteddate date,
+    roleid integer
+);
+
+
+ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 59164)
+-- Name: users_userid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.users_userid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.users_userid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3212 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: users_userid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.users_userid_seq OWNED BY public.users.userid;
+
+
+--
+-- TOC entry 3001 (class 2604 OID 59167)
+-- Name: apiLogs logId; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."apiLogs" ALTER COLUMN "logId" SET DEFAULT nextval('public."apiLogs_logId_seq"'::regclass);
+
+
+--
+-- TOC entry 3002 (class 2604 OID 59169)
+-- Name: plotleads plotid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.plotleads ALTER COLUMN plotid SET DEFAULT nextval('public.plotleads_plotid_seq'::regclass);
+
+
+--
+-- TOC entry 3003 (class 2604 OID 59170)
+-- Name: plotleadsfeedback plotfbid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.plotleadsfeedback ALTER COLUMN plotfbid SET DEFAULT nextval('public.plotleadsfeedback_plotfbid_seq'::regclass);
+
+
+--
+-- TOC entry 3004 (class 2604 OID 59175)
+-- Name: rentalleads rentalid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rentalleads ALTER COLUMN rentalid SET DEFAULT nextval('public.rentalleads_rentalid_seq'::regclass);
+
+
+--
+-- TOC entry 3005 (class 2604 OID 59176)
+-- Name: rentalleadsfeedback rentalfbid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rentalleadsfeedback ALTER COLUMN rentalfbid SET DEFAULT nextval('public.rentalleadsfeedback_rentalfbid_seq'::regclass);
+
+
+--
+-- TOC entry 3006 (class 2604 OID 59177)
+-- Name: resaleleads resaleid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resaleleads ALTER COLUMN resaleid SET DEFAULT nextval('public.resaleleads_resaleid_seq'::regclass);
+
+
+--
+-- TOC entry 3007 (class 2604 OID 59178)
+-- Name: resaleleadsfeedback resalefbid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resaleleadsfeedback ALTER COLUMN resalefbid SET DEFAULT nextval('public.resaleleadsfeedback_resalefbid_seq'::regclass);
+
+
+--
+-- TOC entry 3008 (class 2604 OID 59179)
+-- Name: roles roleid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.roles ALTER COLUMN roleid SET DEFAULT nextval('public.roles_roleid_seq'::regclass);
+
+
+--
+-- TOC entry 3010 (class 2604 OID 59180)
+-- Name: saleleads saleid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.saleleads ALTER COLUMN saleid SET DEFAULT nextval('public.saleleads_saleid_seq'::regclass);
+
+
+--
+-- TOC entry 3011 (class 2604 OID 59181)
+-- Name: saleleadsfeedback salefbid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.saleleadsfeedback ALTER COLUMN salefbid SET DEFAULT nextval('public.saleleadsfeedback_salefbid_seq'::regclass);
+
+
+--
+-- TOC entry 3012 (class 2604 OID 59183)
+-- Name: users userid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN userid SET DEFAULT nextval('public.users_userid_seq'::regclass);
+
+
+--
+-- TOC entry 3174 (class 0 OID 59005)
+-- Dependencies: 201
+-- Data for Name: apiLogs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."apiLogs" ("logId", description, "apiUrl", "requestObjects", "createdBy", "createdDate", "isDelete") FROM stdin;
+\.
+
+
+--
+-- TOC entry 3176 (class 0 OID 59021)
+-- Dependencies: 203
+-- Data for Name: plotleads; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.plotleads (plotid, leadname, mobile, sqft, poss, createby, createddate, updatedby, updateddate, isdeleted, deleteby, deletedate, "assignedTo", brokerage, location, price, leadid, leadgenerationdate, "leadStatus", "followUpDate", email, "PropertyId") FROM stdin;
+52	Stefano	6459853273	938	vrrsbh	Roley	2021-11-26	Gerri	2021-09-28	f	\N	\N	1	\N	4247 Prairieview Drive	$6201788.60	e4ac7bfb-1eda-4d25-a2ff-e2d344c8a521	2021-01-01	\N	2022-02-14	\N	\N
+12	Giorgio	5824590511	1816	wbbeds	Alair	2021-11-25	admin	2022-02-17	f	\N	\N	1	4567897	011 Utah Court	$8060909.10	3385b220-3d74-4e79-94a9-ae8c2779706d	2021-01-01	\N	2022-02-17	\N	\N
+59	Loleta	6129682889	807	citnsn	Steffane	2022-01-09	Aurthur	2021-12-04	f	\N	\N	1	\N	321 Birchwood Drive	$5435209.46	67a4fdd6-f1c8-4437-a9be-73dd0fc9fa23	2021-01-01	\N	2022-02-14	\N	\N
+60	Letizia	2107803611	1717	zcbjrp	Sonya	2021-03-12	Karil	2022-01-15	f	\N	\N	1	\N	125 Knutson Terrace	$5661781.27	5dd570ab-f79b-47a3-a7f5-b997bc97b2c7	2021-01-01	\N	2022-02-14	\N	\N
+61	Allistir	2439509440	1116	zsxfbx	Kori	2021-04-01	Brit	2021-05-22	f	\N	\N	1	\N	4 Forster Avenue	$2516203.43	393f2032-4cf1-4938-8e2d-44e966d9496d	2021-01-01	\N	2022-02-14	\N	\N
+63	Cherin	4668409657	1678	rerilk	Candide	2021-11-28	Maddi	2021-05-19	f	\N	\N	1	\N	51 Fuller Avenue	$5655246.48	03b8b748-651b-4341-978a-4f876c733674	2021-01-01	\N	2022-02-14	\N	\N
+64	Matilde	7663833875	1514	xbfeis	Ursa	2021-05-03	Brannon	2021-04-16	f	\N	\N	1	\N	61128 Cottonwood Junction	$3873374.28	f038535a-ca4a-4fe9-9fd8-c7315f8ac5de	2021-01-01	\N	2022-02-14	\N	\N
+65	Cacilia	5397238618	1297	vvxaam	Laurens	2021-10-19	Candi	2022-01-09	f	\N	\N	1	\N	30 Elmside Junction	$6939730.37	f347acd5-ed6c-414d-97e9-1e68b666ab6f	2021-01-01	\N	2022-02-14	\N	\N
+66	Rowe	8108839834	568	memlqb	Tiffanie	2021-08-06	Caressa	2021-06-08	f	\N	\N	1	\N	72482 Redwing Center	$7837148.45	68368d0e-20d3-4c22-9e3a-d06a25903243	2021-01-01	\N	2022-02-14	\N	\N
+67	Sunshine	1051862705	2465	xptqnv	Brander	2021-08-29	Winonah	2021-04-11	f	\N	\N	1	\N	17 Mayer Trail	$9094778.84	60d2c1a3-bbe6-4840-a04b-9e53a2dd7e48	2021-01-01	\N	2022-02-14	\N	\N
+68	Hillery	1503877497	435	anefwc	Kristien	2021-12-15	Georgeanna	2021-04-17	f	\N	\N	1	\N	56 Carberry Parkway	$9329234.65	d73cc62d-45f9-41b4-b70e-465329477f76	2021-01-01	\N	2022-02-14	\N	\N
+69	Kris	6293352949	2472	ullawn	Kylen	2021-07-04	Fenelia	2021-07-25	f	\N	\N	1	\N	858 Gerald Road	$7654610.10	205e9a02-c63a-49f3-a6de-9303fff0d829	2021-01-01	\N	2022-02-14	\N	\N
+70	Jill	5566487025	1017	hiywfx	Ferrell	2022-01-11	Seana	2021-02-23	f	\N	\N	1	\N	3 Westport Trail	$617964.82	b5838fca-a68f-47d1-94cd-de57c61d49ae	2021-01-01	\N	2022-02-14	\N	\N
+9	Gerda	5568776370	2130	fqcykt	Sutherlan	2021-06-11	Finn	2021-05-24	f	\N	\N	1	\N	36 Jay Crossing	$7751585.13	b20d9b64-73aa-4b75-818f-707da2bc9e59	2021-01-01	\N	2022-02-18	\N	\N
+25	Eimile	6549857390	1003	jugojk	Corella	2021-03-22	Berry	2021-06-22	f	\N	\N	1	\N	6923 Alpine Plaza	$2637820.32	393a44c2-9265-4626-b87b-0847f7607f37	2021-01-01	\N	2022-02-18	\N	\N
+26	Fancy	5753572372	706	jurqzj	Cory	2021-02-15	Enoch	2021-11-26	f	\N	\N	1	\N	5950 Hanson Point	$2717369.74	ab4d0c90-6574-4d43-b3f6-3399696d890a	2021-01-01	\N	2022-02-18	\N	\N
+27	Bjorn	6953780430	1450	qspntn	Georgeanna	2021-10-13	Latrena	2021-11-27	f	\N	\N	1	\N	63 Waubesa Pass	$8857458.66	cb06960d-2fe3-4d01-ae20-9a1f702e57d3	2021-01-01	\N	2022-02-18	\N	\N
+28	Killian	1479178378	1321	ocvpmp	Tommy	2022-01-29	Peggie	2021-06-21	f	\N	\N	1	\N	313 Annamark Crossing	$527350.44	d00b9c6f-21d4-41b6-9500-044af0b27d22	2021-01-01	\N	2022-02-18	\N	\N
+24	Kirbee	5737435201	936	xoymwk	Hurlee	2021-08-27	Caressa	2021-05-08	f	\N	\N	1	\N	68 Prentice Drive	$8488471.62	363f673f-f6a4-439d-827f-172608b7646c	2021-01-01	\N	2022-02-18	\N	\N
+39	Barret	9884320887	1803	ykucla	Jordon	2021-07-13	Gottfried	2022-01-02	f	\N	\N	1	\N	83596 Basil Court	$9704725.91	ecf85bbd-e514-46d4-899e-98f4503c4488	2021-01-01	\N	2022-02-18	\N	\N
+40	Rancell	1942320980	741	bpubtw	Gelya	2021-12-20	Jerrome	2021-07-07	f	\N	\N	1	\N	5 Marquette Park	$3349494.34	fb6db046-d1e4-475d-b4cb-ddbab3e0041a	2021-01-01	\N	2022-02-18	\N	\N
+41	Kayne	2854448427	1777	pvkpat	Konstanze	2021-12-05	Laurence	2021-07-19	f	\N	\N	1	\N	81672 Weeping Birch Hill	$8176710.11	c4fda644-7107-4991-9d74-9c09eb3ab07b	2021-01-01	\N	2022-02-18	\N	\N
+42	Tudor	7492694765	1796	ebkgas	Hamlen	2021-11-09	Paola	2021-12-16	f	\N	\N	1	\N	83338 Starling Park	$1225346.80	19f7c180-fc09-43ee-b4dc-727bf4794b3a	2021-01-01	\N	2022-02-18	\N	\N
+43	Erin	6576858434	1337	zzgusk	Brandon	2021-05-12	Mandi	2022-01-10	f	\N	\N	1	\N	84436 Derek Center	$5616229.44	6e49049b-14d0-4abb-b136-faf789d4df35	2021-01-01	\N	2022-02-20	\N	\N
+44	Clarabelle	2727754448	836	wknjgf	Reinaldos	2022-02-06	Berget	2021-02-11	f	\N	\N	1	\N	604 Butternut Park	$9883167.63	e884013c-83cd-43b4-b907-02dcacc8c729	2021-01-01	\N	2022-02-20	\N	\N
+45	Barbi	9611432512	2025	hqosnl	Hubey	2021-05-24	Lynsey	2021-03-23	f	\N	\N	1	\N	728 Waywood Street	$3830803.55	d8c384bb-c422-4240-9dce-f8acb73c252b	2021-01-01	\N	2022-02-20	\N	\N
+46	Wat	8045960718	998	cjhmdy	Vinson	2021-12-24	Keene	2021-10-20	f	\N	\N	1	\N	61670 Eagle Crest Lane	$5629322.96	a2ebc67e-1fad-4af4-ba8f-1c1d1eda1e85	2021-01-01	\N	2022-02-20	\N	\N
+47	Odette	7245500110	552	pruudn	Helenka	2021-03-29	Randy	2021-05-06	f	\N	\N	1	\N	8 Basil Place	$5652173.89	debd8ed1-2d90-4af1-8670-75cc2b8ea6d8	2021-01-01	\N	2022-02-20	\N	\N
+58	Marti	2353434279	1309	mmckqk	Nettle	2021-09-15	admin	2022-02-21	f	\N	\N	1	5000	173 Anniversary Point	$6460019.21	9cf0cdb5-d6b4-4994-89c9-4ca1ea8709e2	2021-01-01	\N	2022-02-14	\N	\N
+53	Sandor	5732236169	1783	lnotyj	Dolf	2021-05-13	Solomon	2021-02-27	f	\N	\N	1	\N	9 Autumn Leaf Avenue	$4532701.85	d3007ce9-00b9-4e17-ad84-2cb9baf9589c	2021-01-01	\N	2022-02-14	\N	\N
+54	Alfi	5768721905	1404	iswpfa	Lincoln	2021-06-28	Aldon	2021-09-19	f	\N	\N	1	\N	84 Redwing Pass	$2059649.33	a06564d2-7c38-4de7-8566-7b62c71cda08	2021-01-01	\N	2022-02-14	\N	\N
+55	Elfreda	4082724644	1344	ruskwp	Elston	2021-04-02	Cirillo	2021-06-08	f	\N	\N	1	\N	90 Division Pass	$1415315.06	6f2b3ea3-bb33-43bd-b902-cef8cc9b64f0	2021-01-01	\N	2022-02-14	\N	\N
+56	Ashien	9173675276	586	majjbg	Callida	2021-08-26	Traver	2021-09-17	f	\N	\N	1	\N	29631 Hudson Point	$1827137.05	a5b86ae9-7f6d-4503-8d37-5dac66b2e534	2021-01-01	\N	2022-02-14	\N	\N
+57	Kevon	3485733572	475	ovujsq	Jaquelyn	2021-06-23	Gan	2021-03-17	f	\N	\N	1	\N	2223 East Drive	$4932625.60	31bb4682-0e9f-4fc0-8085-9ca3ca7f63c7	2021-01-01	\N	2022-02-14	\N	\N
+71	Lacie	4196046876	1693	rnugxg	Emelyne	2021-08-27	Prudence	2021-10-22	f	\N	\N	1	\N	1 Monument Pass	$434382.10	263e0501-b451-419c-a402-e8e0dedb5a28	2021-01-01	\N	2022-02-14	\N	\N
+72	Francois	8845255465	907	ajfmfk	Colin	2021-10-29	Candy	2022-02-06	f	\N	\N	1	\N	0 Westend Parkway	$8271920.82	305a10b6-cbc6-404f-a7ba-92cccdc89a73	2021-01-01	\N	2022-02-14	\N	\N
+73	Johannah	3454421704	437	jmfmko	Alfy	2021-06-16	Rozalin	2021-08-21	f	\N	\N	1	\N	4 Lighthouse Bay Pass	$4464713.49	773d4bd4-243c-4725-9822-a9db7df659e3	2021-01-01	\N	2022-02-14	\N	\N
+74	Gerti	3487991832	808	loxqwf	Job	2021-02-21	Beverly	2021-09-18	f	\N	\N	1	\N	444 Stang Avenue	$7249863.35	6200f2e4-5321-4093-bb23-cf6fafdbf0a6	2021-01-01	\N	2022-02-14	\N	\N
+75	Red	5388405245	832	uzbfnk	Cristal	2021-08-31	Karlyn	2022-01-03	f	\N	\N	1	\N	12233 Hooker Parkway	$3495567.81	0a32f867-2a3b-4a22-a84f-0a076787d355	2021-01-01	\N	2022-02-14	\N	\N
+76	Yuri	1746483792	652	ywinwh	Dunstan	2021-06-12	Alexis	2021-02-18	f	\N	\N	1	\N	98406 Roth Hill	$3510965.63	f7408316-855d-41b8-8456-960656193041	2021-01-01	\N	2022-02-14	\N	\N
+77	Felix	7906739445	1528	endkzs	Daile	2021-10-06	Adele	2022-01-13	f	\N	\N	1	\N	9 Hagan Alley	$322951.00	2d08e1c7-e6f9-48d2-ba38-496e9a357057	2021-01-01	\N	2022-02-14	\N	\N
+78	Rheta	9051604440	1133	rnvpsf	Amalia	2021-08-30	Waylin	2021-07-18	f	\N	\N	1	\N	70 Pleasure Trail	$8258585.13	61b02b25-f397-441a-8e72-dd6be81bbe5e	2021-01-01	\N	2022-02-14	\N	\N
+79	Tannie	2028711825	1994	kebhet	Myles	2021-03-10	Ibrahim	2021-03-20	f	\N	\N	1	\N	2 Elka Circle	$9092979.92	02fb8c22-aa03-4f1d-8807-7e7e7e62a53c	2021-01-01	\N	2022-02-14	\N	\N
+80	Manfred	7496225958	2220	xljlhb	Mady	2021-10-27	Rees	2021-11-14	f	\N	\N	1	\N	16 Muir Plaza	$8251610.23	89ba2c1a-3dff-4620-8429-7e5ae0b0e762	2021-01-01	\N	2022-02-14	\N	\N
+81	Jade	9165480487	2057	swpmtd	Janeen	2021-02-19	Nessa	2021-09-20	f	\N	\N	1	\N	38 Hermina Junction	$6759433.07	76a861f6-e43b-49b0-b3e8-8075a35c3d43	2021-01-01	\N	2022-02-14	\N	\N
+82	Derick	1376567097	2201	ydtmpy	Justinn	2021-10-10	Clarey	2021-08-15	f	\N	\N	1	\N	562 Dexter Trail	$2099719.34	3d431ec3-5df3-4485-ba9d-0ef0cdc4156e	2021-01-01	\N	2022-02-14	\N	\N
+17	Sacha	5396828321	1860	ftacov	Joli	2022-01-01	admin	2022-02-17	f	\N	\N	1	789456	12264 Coolidge Center	$3196848.67	9cd97774-24b3-4f71-a2c4-2f6167f07180	2021-01-01	\N	2022-02-14	\N	\N
+6	Desmund	6921391985	2318	rokule	Lynn	2021-09-23	Baxie	2021-10-10	f	\N	\N	1	\N	5 Everett Drive	$7717560.26	a27ce250-7186-4a51-86dd-f269e6ae7512	2021-01-01	\N	2022-02-14	\N	\N
+7	Rafaelia	8188409799	1354	tznego	Jed	2021-07-06	Gabbey	2021-06-06	f	\N	\N	1	\N	424 Oneill Drive	$4862613.33	149c9fea-3b07-4331-abd3-097f2b6eda3b	2021-01-01	\N	2022-02-14	\N	\N
+8	Dee dee	7134695779	2493	vlsglc	Codi	2021-06-09	Beryle	2021-08-01	f	\N	\N	1	\N	6463 Jay Lane	$9661596.12	90c2fc2b-f789-45af-a61b-b736bc35201e	2021-01-01	\N	2022-02-14	\N	\N
+1	Meier	3358336029	1845	jilldj	Elroy	2021-02-15	Harper	2021-02-23	f	\N	\N	1	\N	77790 Evergreen Pass	$655912.35	6f20c108-8223-4f95-b2f5-b096153cefe8	2021-01-01	\N	2022-02-17	\N	\N
+2	Joe	8008695591	1922	lvtboj	Timmy	2021-04-15	Adelaida	2021-06-22	f	\N	\N	1	\N	93 Basil Drive	$517400.70	28b06bf5-cfbc-429b-9b9b-ecd31d43266f	2021-01-01	\N	2022-02-17	\N	\N
+3	Bert	6514295028	1730	phfnnq	Sunny	2021-10-18	Fletcher	2021-08-17	f	\N	\N	1	\N	10664 Northport Trail	$3284253.81	cd6e3a9b-07bc-4772-aa99-31e0f949e7d0	2021-01-01	\N	2022-02-17	\N	\N
+4	Lanie	9482742044	1059	lpbmcm	Casie	2021-09-27	Briney	2021-08-02	f	\N	\N	1	\N	5 Westridge Pass	$1637043.61	4b7694dc-b073-49b7-89ed-cf49080eb991	2021-01-01	\N	2022-02-17	\N	\N
+5	Waylon	6387677816	400	uyuicy	Omar	2021-09-05	Haley	2021-05-20	f	\N	\N	1	\N	122 Service Circle	$2529366.12	a224ab15-4e4c-403f-95fc-731ca305855e	2021-01-01	\N	2022-02-17	\N	\N
+20	Merilee	5376296061	696	rkivyg	Erin	2021-03-18	Marlo	2021-02-22	f	\N	\N	1	\N	7121 Briar Crest Road	$5636837.57	25ce81e5-a925-4110-a4ef-4c21f7978f8d	2021-01-01	\N	2022-02-18	\N	\N
+21	Ethelbert	9085358630	1374	antjvz	Eleanor	2021-02-19	Doti	2021-05-06	f	\N	\N	1	\N	55 Anniversary Alley	$6780355.73	c5525b86-a2eb-4470-87a7-8a474a0e60df	2021-01-01	\N	2022-02-18	\N	\N
+22	Albie	7544590469	462	qpygbc	Marieann	2021-09-01	Natalina	2021-11-22	f	\N	\N	1	\N	86 Meadow Valley Hill	$2453442.82	aa23dbec-2c1c-4f4f-84b8-c27020b9be41	2021-01-01	\N	2022-02-18	\N	\N
+23	Ashlie	2144297511	419	zsmbpc	Morly	2021-10-11	Lyndsay	2021-11-04	f	\N	\N	1	\N	57 Buell Way	$8229440.83	e49f2cfc-b457-4b36-abed-2865ecbaf158	2021-01-01	\N	2022-02-18	\N	\N
+29	Addy	4351949720	1945	bydqkf	Constancia	2021-12-24	Mayor	2022-01-01	f	\N	\N	1	\N	58 Arrowood Trail	$5610378.94	e15417e1-f927-4a16-b477-68abc909a828	2021-01-01	\N	2022-02-18	\N	\N
+30	Celestyn	8518474918	2488	qdermj	Desiri	2022-01-15	Gena	2021-02-21	f	\N	\N	1	\N	4 Welch Point	$6485925.73	09da1b12-a97a-436b-980d-675572993e34	2021-01-01	\N	2022-02-18	\N	\N
+31	Selby	3578729383	459	ggsiaf	Andreas	2021-12-14	Damaris	2021-04-28	f	\N	\N	1	\N	76083 Pierstorff Hill	$7775946.21	b52b18f1-6035-4d5c-84e6-338660bb5eff	2021-01-01	\N	2022-02-18	\N	\N
+32	Elwood	1028776438	1754	bocrql	Adorne	2021-07-21	Sande	2021-08-25	f	\N	\N	1	\N	94 Service Center	$1402715.76	3994b816-b236-4821-8253-fdca9f7d8fe0	2021-01-01	\N	2022-02-18	\N	\N
+33	Tobie	4609355374	454	hxgfzr	Jozef	2021-09-15	Marcie	2021-02-13	f	\N	\N	1	\N	3989 Morrow Drive	$5574847.98	b296d6dc-da3c-4959-af66-80dcc6a71e01	2021-01-01	\N	2022-02-18	\N	\N
+34	Rogers	5236247858	778	qfslct	Rodd	2021-12-10	Yelena	2021-03-06	f	\N	\N	1	\N	7 Harper Way	$9261634.02	fc037243-0121-4a57-aba4-ac4ae365ddf1	2021-01-01	\N	2022-02-18	\N	\N
+35	Vlad	8036342594	1324	ypkobf	Lauretta	2021-10-15	Dallas	2021-06-15	f	\N	\N	1	\N	67779 Trailsway Avenue	$9669624.51	14a15e7d-55e8-48ab-aceb-4793bfaffebf	2021-01-01	\N	2022-02-18	\N	\N
+36	Waite	8498691046	2288	vnwmtv	Leandra	2021-03-07	Paxon	2021-12-01	f	\N	\N	1	\N	1 Thompson Plaza	$5795426.54	3d648c8c-8349-44d1-82c2-e54330f61383	2021-01-01	\N	2022-02-18	\N	\N
+62	Danna	9272196809	697	bksewl	Alyss	2021-07-19	admin	2022-02-20	f	admin	2022-02-17	1	45462312	0 Morrow Court	$5329188.47	ed989bd5-75b3-4a8b-bd4f-11ad83e14314	2021-01-01	Contacted	2022-02-17	\N	\N
+10	Shay	9591681275	932	zmkvep	Orville	2021-05-16	Wes	2021-12-16	f	\N	\N	1	\N	35 Spohn Plaza	$348252.70	377be83e-a9ce-40e5-9271-37f45e501b5f	2021-01-01	\N	2022-02-14	\N	\N
+11	Ruddie	5917771721	1853	vhjldr	Fairfax	2021-03-02	Merwin	2021-06-09	f	\N	\N	1	\N	2705 Bashford Junction	$120303.19	0d24852d-e002-49cb-9a4e-06ccbfac2c00	2021-01-01	\N	2022-02-14	\N	\N
+13	Elita	6586707819	1009	akpcvc	Flory	2021-04-24	Culver	2021-05-24	f	\N	\N	1	\N	5 Spenser Lane	$6918359.90	3cacd992-6f98-4600-ae13-1ea1337aa38e	2021-01-01	\N	2022-02-14	\N	\N
+14	Alia	8214353364	885	hnolry	Coriss	2021-09-22	Celie	2021-03-03	f	\N	\N	1	\N	9915 Pawling Drive	$2474970.16	2a995785-3780-4e6f-917e-377145fbf1c8	2021-01-01	\N	2022-02-14	\N	\N
+15	Mavis	1583691341	1154	fkhbxk	Tandie	2021-08-18	Rochester	2021-08-23	f	\N	\N	1	\N	3 Burning Wood Way	$6405638.26	d74c0864-3b1d-457c-8cc0-bfc2ebd715e5	2021-01-01	\N	2022-02-14	\N	\N
+16	Raimundo	6824017943	2085	lkcnsm	Annabelle	2021-12-16	Cortie	2021-03-18	f	\N	\N	1	\N	339 Mallory Drive	$4118043.18	98f0d809-0969-474d-b52b-2df5b30b46b9	2021-01-01	\N	2022-02-14	\N	\N
+18	Olly	5674518945	1320	jbhwbp	Andreana	2021-06-01	Keely	2021-05-10	f	\N	\N	1	\N	6369 West Street	$7277643.16	e4933c63-f3a1-43f7-b092-7c2fe0ef1009	2021-01-01	\N	2022-02-14	\N	\N
+19	Harriot	1519589351	1207	tfutun	Izaak	2022-01-20	Had	2022-01-10	f	\N	\N	1	\N	03868 Continental Street	$9291899.03	ae185971-b91f-48c6-be07-ca6ae321c6e7	2021-01-01	\N	2022-02-14	\N	\N
+37	Padriac	5573605170	1196	qfhiur	Aurea	2022-01-07	Donelle	2021-12-22	f	\N	\N	1	\N	3 Packers Point	$3962425.59	73e9cb8e-6291-41ae-b0fb-0101d027f7a2	2021-01-01	\N	2022-02-18	\N	\N
+38	Denny	1323183683	1533	urhqqy	Chlo	2021-07-08	Theodora	2021-05-04	f	\N	\N	1	\N	70 Schlimgen Terrace	$8064156.01	1cc02766-1f43-407e-8a25-2a0db4662c33	2021-01-01	\N	2022-02-18	\N	\N
+48	Loralee	5291209617	2226	jhxhaa	Ambrosi	2021-06-10	Riley	2021-07-14	f	\N	\N	1	\N	8 Jay Point	$7955085.25	4b10cde3-9b84-4bc7-b9e1-c7703245e55b	2021-01-01	\N	2022-02-14	\N	\N
+49	Candie	4528114170	1709	ximrvu	Ive	2021-07-31	Allyce	2021-11-20	f	\N	\N	1	\N	40588 Elmside Terrace	$4463276.58	6d6734a7-5bdf-4396-84d4-369d2e41b4fa	2021-01-01	\N	2022-02-14	\N	\N
+50	Katya	2865085244	700	ctukfa	Lauri	2022-01-06	Katharine	2021-08-20	f	\N	\N	1	\N	3 Bonner Lane	$5073504.74	710f9b84-66a9-4051-815b-795139c78a87	2021-01-01	\N	2022-02-14	\N	\N
+51	Erminie	6498960360	1758	tgeyqu	Kevon	2021-05-20	Coriss	2021-11-15	f	\N	\N	1	\N	05 Fieldstone Hill	$1762275.93	686bcac0-3f68-4605-befa-9c8fde5f606f	2021-01-01	\N	2022-02-14	\N	\N
+83	Lynette	8692021370	1780	vjvfky	Salaidh	2021-02-20	Westbrooke	2021-10-10	f	\N	\N	1	\N	63 Hollow Ridge Parkway	$8336974.02	37ca9527-f089-4c4b-b3dc-8c56c321893b	2021-01-01	\N	2022-02-14	\N	\N
+84	Rees	3357850484	2049	cjjlvw	Ferd	2021-11-21	Madalyn	2022-01-13	f	\N	\N	1	\N	28 Cambridge Place	$342333.88	5da2dd10-28a3-43af-9ae0-63b98b647bdc	2021-01-01	\N	2022-02-14	\N	\N
+85	Olga	8865786724	2381	casvdt	Arabela	2021-12-27	Ashley	2021-05-29	f	\N	\N	1	\N	505 Almo Parkway	$7937921.43	54163c1d-1b85-46ba-9b87-27b4dc83a6b7	2021-01-01	\N	2022-02-14	\N	\N
+86	Sigismond	9755640721	1720	ykuihe	Stephan	2021-11-17	Lexy	2021-10-28	f	\N	\N	1	\N	135 Mariners Cove Trail	$2701884.63	55410a2e-3b12-4118-ad61-fb14a2b990ef	2021-01-01	\N	2022-02-14	\N	\N
+87	Rudolfo	1343318442	1028	gijqdt	Kaia	2021-10-19	Chrysler	2021-04-02	f	\N	\N	1	\N	457 Veith Plaza	$7264503.32	519a998f-5a80-4b76-82b4-64414db5ed47	2021-01-01	\N	2022-02-14	\N	\N
+88	Ricard	6234627151	1134	elalxe	Corine	2021-11-21	Bartholomeo	2021-05-28	f	\N	\N	1	\N	0984 Blue Bill Park Avenue	$7441442.40	02b8974e-08c3-454b-9ee3-2a117e85863a	2021-01-01	\N	2022-02-14	\N	\N
+89	Tarrah	3202952445	803	ircqux	Pet	2021-10-29	Estel	2021-07-06	f	\N	\N	1	\N	4098 Schmedeman Plaza	$6701745.59	d7719974-74f1-4dbd-89af-16eb72dcf615	2021-01-01	\N	2022-02-14	\N	\N
+90	Thorsten	2363192277	2448	zjfytj	Min	2021-03-25	Benedicta	2021-09-16	f	\N	\N	1	\N	8447 Boyd Plaza	$1108615.63	2853b9ee-8d23-4229-a0ae-2f6c91be5f1c	2021-01-01	\N	2022-02-14	\N	\N
+91	Hollyanne	7673779302	2366	gxuege	Kristofer	2021-05-20	Enrica	2021-04-25	f	\N	\N	1	\N	3 Anniversary Road	$9999120.34	8d9e1b49-9357-433c-a23f-b8f04da3f0c2	2021-01-01	\N	2022-02-14	\N	\N
+92	Desiree	8175090804	1200	yfbmhh	Randie	2021-05-21	Verna	2021-05-01	f	\N	\N	1	\N	5 2nd Hill	$7642090.65	8584b2b2-a458-4f02-8772-8676fd55cd3c	2021-01-01	\N	2022-02-14	\N	\N
+93	Avie	2411066075	2090	mfbnch	Nancee	2021-05-12	Roanne	2021-05-09	f	\N	\N	1	\N	9103 Jay Alley	$1555283.41	61c21971-c468-4617-8560-501e1cbff05e	2021-01-01	\N	2022-02-14	\N	\N
+94	Marcello	2945919435	2185	sydyzw	Pryce	2021-08-12	Bruce	2021-07-09	f	\N	\N	1	\N	216 Walton Junction	$6458374.78	f41a41ba-94c2-4f29-8fec-9f60af8c3b21	2021-01-01	\N	2022-02-14	\N	\N
+95	Catha	1514406595	1141	vlcbcu	Eldon	2021-03-07	Bancroft	2021-03-08	f	\N	\N	1	\N	58761 Hauk Parkway	$6660206.59	f92e42b4-1dee-43dd-8310-36986a5272c6	2021-01-01	\N	2022-02-14	\N	\N
+96	Nomi	1417177746	1862	vvbbui	Witty	2021-09-22	Boycey	2021-08-05	f	\N	\N	1	\N	9345 Corben Pass	$8138128.91	0640b7a0-45e5-4211-affa-21daf2a6d055	2021-01-01	\N	2022-02-14	\N	\N
+97	Effie	4003378023	2004	zjxthw	Ynez	2022-01-02	Grayce	2021-03-14	f	\N	\N	1	\N	5 Oak Valley Lane	$8237462.38	78a645e8-2149-4800-973c-c0e5937577c3	2021-01-01	\N	2022-02-14	\N	\N
+98	Dyanne	6376422381	1051	ykruko	Euell	2022-01-18	Holden	2021-06-13	f	\N	\N	1	\N	35 Roxbury Way	$345974.67	bcefce90-c583-4ad2-9412-3650e5a53564	2021-01-01	\N	2022-02-14	\N	\N
+99	Nara	6475923973	1484	tpwnjj	Sloane	2021-08-08	Currey	2021-06-22	f	\N	\N	1	\N	86172 Gulseth Crossing	$829301.83	2f295caa-bcfd-4b21-94d9-c8e2ab209ed8	2021-01-01	\N	2022-02-14	\N	\N
+100	Rene	4009561367	1984	uecmfb	Eyde	2021-10-15	Gibbie	2021-12-23	f	\N	\N	1	\N	765 Ridge Oak Parkway	$8559981.04	23ec4f14-c5bf-497a-b13a-7e755e4ecedc	2021-01-01	\N	2022-02-14	\N	\N
+\.
+
+
+--
+-- TOC entry 3178 (class 0 OID 59029)
+-- Dependencies: 205
+-- Data for Name: plotleadsfeedback; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.plotleadsfeedback (plotfbid, createdby, createddate, updatedby, updateddate, description, isdeleted, deleteby, deletedate, plotid, followupdate) FROM stdin;
+8	admin	2022-02-17	\N	\N	testing	\N	\N	\N	62	2022-02-17
+\.
+
+
+--
+-- TOC entry 3180 (class 0 OID 59075)
+-- Dependencies: 207
+-- Data for Name: rentalleads; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.rentalleads (rentalid, societyname, leadname, mobile, bhk, sqft, rent, deposit, furnishedstatus, availablefor, flatno, wingno, floor, poss, createdby, createddate, updateddate, updatedby, isdeleted, deletedate, deleteby, "assignedTo", brokerage, location, leadid, leadgenerationdate, "leadStatus", "followUpDate", email, "PropertyId") FROM stdin;
+51	Rowland	Sunny	2769104504	2bhk	1261	$41544.66	$127902.64	semifurnished	bachlore, family	1746	4	3	bvhwph	Raina	2022-01-19	2022-02-17	admin	t	2022-02-17	admin	1	789879	0 Holy Cross Parkway	da285ac3-1350-4e89-8dda-3ad63382456e	2021-01-01	Shared Details	2022-02-20	\N	\N
+2	Michigan	Thornton	4521834233	2bhk	2400	$39284.50	$346332.47	semifurnished	bachlore, family	1748	3	14	smkurz	Maxy	2021-07-10	2021-11-07	Drake	f	\N	\N	1	\N	27159 Holy Cross Terrace	53c1d951-dfec-4e3d-91fc-ff7c0e530adb	2021-01-01	\N	2022-02-20	\N	\N
+3	Surrey	Federico	8358559215	2bhk	1226	$29681.63	$171638.83	semifurnished	bachlore, family	275	2	13	tizipy	Bobine	2021-12-18	2021-10-29	Merill	f	\N	\N	1	\N	54 Mitchell Pass	2490edd9-33b6-4d49-b67f-220c341cf2e0	2021-01-01	\N	2022-02-20	\N	\N
+4	Kingsford	Dennison	4618049345	2bhk	791	$14393.89	$448259.03	semifurnished	bachlore, family	532	3	3	andsvo	Lisetta	2021-07-13	2021-07-18	Mackenzie	f	\N	\N	1	\N	44063 Oak Drive	bae7ed27-8471-4a86-a03e-047ef264efc6	2021-01-01	\N	2022-02-20	\N	\N
+5	Algoma	Marla	2011908946	2bhk	661	$15992.24	$219708.73	semifurnished	bachlore, family	1823	4	4	raxyuo	Emelita	2021-04-02	2021-02-28	Michal	f	\N	\N	1	\N	52712 Marquette Drive	e9660c64-aed1-46d8-880f-daf73d1d4315	2021-01-01	\N	2022-02-20	\N	\N
+31	Anhalt	Francklyn	9626340041	2bhk	1792	$24514.92	$371040.41	semifurnished	bachlore, family	1089	5	6	ocxjtw	Abey	2021-02-26	2022-02-21	admin	f	\N	\N	1	\N	0 Bayside Terrace	3b74e902-834f-46b7-bf23-1b33fb7825e7	2021-01-01	Contacted	2022-02-14	\N	\N
+6	Oxford	Merrile	1072881848	2bhk	1524	$25237.03	$306052.01	semifurnished	bachlore, family	188	4	7	fmyjor	Reinaldos	2021-07-11	2021-05-04	Lane	f	\N	\N	1	\N	5733 Lake View Terrace	249a6d0d-4776-4f5b-b6e1-0d27be50c298	2021-01-01	\N	2022-02-14	\N	\N
+7	Algoma	Peggie	2573487380	2bhk	1018	$16981.48	$253860.94	semifurnished	bachlore, family	745	3	13	aqgsay	Dagmar	2021-10-12	2022-01-22	Vale	f	\N	\N	1	\N	425 Victoria Way	7f336549-b107-4b5b-a12d-49ab13e09902	2021-01-01	\N	2022-02-14	\N	\N
+8	Golf Course	Dehlia	1277822804	2bhk	2287	$18766.69	$191006.75	semifurnished	bachlore, family	1261	3	3	pilbyg	Danny	2021-05-20	2021-10-03	Alleen	f	\N	\N	1	\N	37042 Del Mar Alley	7028f05b-8e69-40b3-a703-ba258dde9b2e	2021-01-01	\N	2022-02-14	\N	\N
+9	Darwin	Modestine	8626011687	2bhk	1731	$44789.00	$301796.96	semifurnished	bachlore, family	72	3	14	fyrkyo	Christy	2021-11-01	2021-04-18	Kizzee	f	\N	\N	1	\N	788 Mosinee Plaza	4f9f145f-5678-403c-83dd-021999b645da	2021-01-01	\N	2022-02-14	\N	\N
+10	Autumn Leaf	Lynette	1334539418	2bhk	1194	$13595.83	$443103.13	semifurnished	bachlore, family	1944	3	7	zvblhv	Jarrett	2021-03-04	2021-11-10	Brigitta	f	\N	\N	1	\N	82782 Hudson Street	56b3bda9-c469-45b0-8225-f849c15b3a32	2021-01-01	\N	2022-02-14	\N	\N
+11	Hovde	Karolina	8994378432	2bhk	1369	$30828.48	$224285.16	semifurnished	bachlore, family	769	1	6	aeokaa	Armand	2021-11-11	2021-05-10	Katalin	f	\N	\N	1	\N	52 Russell Circle	7364eab6-bb6f-4205-a70d-d58795a3da8d	2021-01-01	\N	2022-02-14	\N	\N
+12	Prairie Rose	Jerrold	7956337120	2bhk	1239	$22695.76	$232783.26	semifurnished	bachlore, family	358	2	7	vjocor	Gena	2021-12-01	2021-05-22	Prentice	f	\N	\N	1	\N	66 American Ash Terrace	437b0bd6-37e8-4f17-82ed-d22d53b3f2c6	2021-01-01	\N	2022-02-14	\N	\N
+13	Buell	Lenci	6623940632	2bhk	2234	$41933.78	$349487.22	semifurnished	bachlore, family	145	3	6	kuiscc	Ken	2021-06-02	2021-12-28	Enrichetta	f	\N	\N	1	\N	50 Dryden Place	c0793a3e-b1d2-4946-ba11-1deae5aad69b	2021-01-01	\N	2022-02-14	\N	\N
+14	Bunting	Sanders	4971361643	2bhk	906	$27205.83	$124913.75	semifurnished	bachlore, family	1157	4	15	gamfqz	Byrle	2021-10-13	2021-03-17	Cart	f	\N	\N	1	\N	59 Scoville Junction	c7b6a343-1e75-49e6-b8ec-880f951274dc	2021-01-01	\N	2022-02-14	\N	\N
+15	Blue Bill Park	Marcile	8093148092	2bhk	2173	$38888.01	$491893.78	semifurnished	bachlore, family	914	4	5	krrlut	Lurleen	2021-05-18	2021-12-28	Laurent	f	\N	\N	1	\N	5567 Del Sol Avenue	e0b2f77e-0a93-46cf-967e-b5013425e5a6	2021-01-01	\N	2022-02-14	\N	\N
+16	Comanche	Jaynell	4508568209	2bhk	1246	$35108.71	$178295.97	semifurnished	bachlore, family	21	1	8	rkbrkc	Wesley	2021-05-11	2021-03-28	Audre	f	\N	\N	1	\N	8 Arrowood Alley	e1680239-2d97-47e3-9c3e-c7b010ff583a	2021-01-01	\N	2022-02-14	\N	\N
+17	Miller	Koo	1512084314	2bhk	1852	$14523.82	$279793.11	semifurnished	bachlore, family	525	5	7	icbaii	Brigitte	2021-08-01	2022-01-06	Ricca	f	\N	\N	1	\N	56 Grover Junction	5aeed794-42ea-4b5a-8bce-6a14c3284ed4	2021-01-01	\N	2022-02-14	\N	\N
+18	Bultman	Moira	5236063716	2bhk	2344	$17228.20	$370514.81	semifurnished	bachlore, family	1502	4	4	vtogyb	Lurlene	2021-06-18	2022-01-24	Schuyler	f	\N	\N	1	\N	5 Derek Alley	fccdcb20-5e78-49dd-bdea-68c6e5498c0f	2021-01-01	\N	2022-02-14	\N	\N
+19	Gulseth	Sollie	2273365405	2bhk	1849	$24151.55	$445426.78	semifurnished	bachlore, family	828	3	2	nnuxoy	Phillipe	2021-07-13	2021-08-18	Ramon	f	\N	\N	1	\N	387 Utah Road	32c26936-c97b-4d02-821e-9b2c080eb141	2021-01-01	\N	2022-02-14	\N	\N
+20	Rockefeller	Jayson	7476220607	2bhk	2111	$49110.52	$478646.20	semifurnished	bachlore, family	418	5	8	lfbgmx	Trina	2021-11-11	2021-10-05	Pietra	f	\N	\N	1	\N	614 Buena Vista Avenue	bab6ce58-992a-44dd-abea-8e730ff6cda8	2021-01-01	\N	2022-02-14	\N	\N
+21	Debs	Earvin	2701705824	2bhk	2176	$16323.33	$199660.62	semifurnished	bachlore, family	223	4	5	fhnmxz	Bobby	2021-05-16	2021-02-09	Ellynn	f	\N	\N	1	\N	60936 Mallard Circle	1e324e95-c4f0-494b-a32d-79a893a015cf	2021-01-01	\N	2022-02-14	\N	\N
+22	Lake View	North	8581215888	2bhk	2063	$16623.61	$234826.54	semifurnished	bachlore, family	667	2	15	gsmxfy	Valery	2021-02-10	2021-05-17	Livvyy	f	\N	\N	1	\N	3844 Redwing Plaza	29043077-68f0-402b-b996-0a4a2f716c32	2021-01-01	\N	2022-02-14	\N	\N
+23	Bayside	Kirby	2769963145	2bhk	1119	$27515.59	$415059.54	semifurnished	bachlore, family	504	1	15	hwnivi	Linda	2021-04-10	2021-08-21	Tonia	f	\N	\N	1	\N	348 Longview Avenue	0033e4ca-3c46-460e-800b-1b3c047b22db	2021-01-01	\N	2022-02-14	\N	\N
+24	Heath	Gretna	5625717534	2bhk	1084	$12534.62	$386458.44	semifurnished	bachlore, family	1746	4	9	axzvfr	Julian	2021-05-22	2021-09-06	Jennica	f	\N	\N	1	\N	0688 Rigney Street	c9aab439-c1a6-4f8c-bb10-4d9c62ba359c	2021-01-01	\N	2022-02-14	\N	\N
+25	Novick	Keefer	5296032128	2bhk	2092	$28669.18	$140626.02	semifurnished	bachlore, family	713	4	3	cdxdds	Angela	2021-06-17	2022-01-11	Halsy	f	\N	\N	1	\N	8 Ridgeview Place	d802c21b-2422-4dce-8d86-d886c19e383a	2021-01-01	\N	2022-02-14	\N	\N
+26	Fallview	Janice	9867127852	2bhk	2432	$10476.52	$271142.80	semifurnished	bachlore, family	1246	5	14	hnrzee	Nina	2021-03-17	2021-08-25	Fancy	f	\N	\N	1	\N	1913 Ohio Drive	bd6e0e9a-8e6d-43c1-9a13-814ebcdc2930	2021-01-01	\N	2022-02-14	\N	\N
+27	Comanche	Gaultiero	2716067011	2bhk	517	$36498.28	$355741.95	semifurnished	bachlore, family	1409	5	4	pupffp	Brig	2021-05-09	2021-04-04	Rudd	f	\N	\N	1	\N	453 Donald Terrace	3e6cf146-b694-4d36-b19f-872a23d219fd	2021-01-01	\N	2022-02-14	\N	\N
+28	Lakewood	Karlie	5774150635	2bhk	2399	$21187.49	$266537.62	semifurnished	bachlore, family	813	4	6	zzjxoq	Cordy	2021-11-29	2021-12-17	Jania	f	\N	\N	1	\N	9 Hovde Park	f719b811-3d2f-4670-b2b6-8e4036832d6e	2021-01-01	\N	2022-02-14	\N	\N
+29	Nancy	Arnie	5114148440	2bhk	1502	$40797.82	$234860.13	semifurnished	bachlore, family	1665	5	8	pbewnb	Sibelle	2022-01-13	2021-04-01	Eydie	f	\N	\N	1	\N	9 Weeping Birch Place	1a81b4e9-f0bb-41a8-a726-0896c5b57fd7	2021-01-01	\N	2022-02-14	\N	\N
+30	Pine View	Gearard	5229886000	2bhk	914	$35311.58	$235760.85	semifurnished	bachlore, family	1040	2	2	usroeb	Jess	2021-07-02	2021-07-03	Brady	f	\N	\N	1	\N	489 Esch Avenue	ea72fd77-3809-424a-b078-d7c5dda9dfd1	2021-01-01	\N	2022-02-14	\N	\N
+32	Vidon	Bradly	3639697277	2bhk	1299	$31704.03	$401654.98	semifurnished	bachlore, family	1885	2	11	bsyqhr	Ibrahim	2021-03-24	2021-10-21	Verla	f	\N	\N	1	\N	091 Warrior Park	d11725d0-7271-4d5d-b638-2c2b4b295a9c	2021-01-01	\N	2022-02-14	\N	\N
+33	Dakota	Neil	8159925010	2bhk	1894	$30276.69	$446159.67	semifurnished	bachlore, family	397	5	12	xdgvng	Gideon	2021-02-14	2021-09-13	Tanhya	f	\N	\N	1	\N	40703 West Junction	690c7c07-28a6-4368-b7e1-e4c783f8a558	2021-01-01	\N	2022-02-14	\N	\N
+34	Havey	Filide	2438398234	2bhk	676	$33684.12	$203621.74	semifurnished	bachlore, family	51	4	5	uivhmi	Ronny	2021-07-24	2021-08-12	Hurley	f	\N	\N	1	\N	4 Merry Point	8aea82af-efbc-476c-a0fa-78bbb609df84	2021-01-01	\N	2022-02-14	\N	\N
+35	Delladonna	Kingston	5126523984	2bhk	762	$48011.62	$422653.20	semifurnished	bachlore, family	988	5	8	niuzwf	Ellswerth	2021-12-17	2021-02-21	Daryl	f	\N	\N	1	\N	273 Lotheville Pass	5855261f-0952-4653-9943-8d409437cbf4	2021-01-01	\N	2022-02-14	\N	\N
+36	Fulton	Pru	5153233450	2bhk	621	$12132.69	$368672.32	semifurnished	bachlore, family	750	5	10	olptsq	Marabel	2021-11-25	2021-02-14	Zorine	f	\N	\N	1	\N	6 Helena Way	7ef12497-3602-4e50-8eac-3d399ba21acf	2021-01-01	\N	2022-02-14	\N	\N
+37	Cordelia	Elsbeth	3865005277	2bhk	2466	$16699.74	$256756.30	semifurnished	bachlore, family	1771	4	12	bktbpi	Brittaney	2021-07-10	2021-09-01	Hazel	f	\N	\N	1	\N	77 Namekagon Park	784d75c6-1eff-4120-9c77-addddeed52c2	2021-01-01	\N	2022-02-14	\N	\N
+38	Orin	Kirsten	8063793710	2bhk	442	$18002.34	$178981.24	semifurnished	bachlore, family	1520	2	6	qfkqzg	Barbee	2021-07-08	2021-04-09	Laraine	f	\N	\N	1	\N	643 Mallory Crossing	efa63090-1748-4ab3-8111-4b7ee0e4d8f6	2021-01-01	\N	2022-02-14	\N	\N
+39	Independence	Dilly	8245635482	2bhk	2204	$46734.63	$272495.77	semifurnished	bachlore, family	1907	5	13	pxuwnb	Esma	2021-12-10	2021-08-09	Orella	f	\N	\N	1	\N	29 South Lane	1b72c1cb-c24a-4857-9db4-2dc2def72051	2021-01-01	\N	2022-02-14	\N	\N
+40	Thierer	Clari	3586014342	2bhk	897	$15036.69	$288703.02	semifurnished	bachlore, family	248	4	6	vaevti	Siward	2021-09-28	2021-07-24	Gunner	f	\N	\N	1	\N	34 Claremont Terrace	530ef467-d740-4ac0-953b-5aa0db32df5f	2021-01-01	\N	2022-02-14	\N	\N
+41	Pepper Wood	Gerhard	6595277852	2bhk	783	$25121.92	$349413.59	semifurnished	bachlore, family	1520	5	9	gvlxww	Yale	2022-01-13	2021-09-19	Bartolomeo	f	\N	\N	1	\N	4407 Riverside Drive	04cb7c0c-53b2-49dd-9042-f2973a5d582a	2021-01-01	\N	2022-02-14	\N	\N
+42	David	Sheba	7873926467	2bhk	2434	$47245.04	$146175.20	semifurnished	bachlore, family	1668	4	5	zeakrc	Genia	2021-09-04	2021-03-25	Jackelyn	f	\N	\N	1	\N	90222 Summit Hill	54cd3fce-9cc1-47fd-94d9-798314ebd8b8	2021-01-01	\N	2022-02-14	\N	\N
+43	Grayhawk	Damien	1006251207	2bhk	1799	$27887.68	$214289.65	semifurnished	bachlore, family	965	3	5	fdcenc	Nessie	2021-02-24	2021-03-03	Aileen	f	\N	\N	1	\N	29 Maple Junction	9ba5be03-df38-4cd2-b53d-94054af21c42	2021-01-01	\N	2022-02-14	\N	\N
+44	Ryan	Benjamin	3914792819	2bhk	1822	$31045.13	$171042.67	semifurnished	bachlore, family	145	1	3	qtupqo	Sylvester	2021-04-04	2021-09-28	Lilith	f	\N	\N	1	\N	1 Dorton Parkway	76e29d12-92ae-425e-b844-ffa960dd9de0	2021-01-01	\N	2022-02-14	\N	\N
+45	Little Fleur	Salem	7606860469	2bhk	2305	$24118.89	$368743.21	semifurnished	bachlore, family	1990	5	2	pwxbci	Esma	2021-07-19	2021-12-25	Mathias	f	\N	\N	1	\N	91712 Hoffman Lane	e92a33be-c4f2-4327-bdeb-f0774fec113d	2021-01-01	\N	2022-02-14	\N	\N
+46	Tony	Sonny	3504429604	2bhk	1190	$14219.61	$447829.29	semifurnished	bachlore, family	1581	1	12	mwvcuc	Pembroke	2021-05-16	2021-09-24	Ellsworth	f	\N	\N	1	\N	2208 Huxley Terrace	d759228d-534a-405e-ac02-880071260c93	2021-01-01	\N	2022-02-14	\N	\N
+47	Memorial	Roddie	5457013213	2bhk	1881	$20195.72	$477988.46	semifurnished	bachlore, family	416	4	3	fzeoek	Hermione	2021-04-18	2021-06-20	Jarrad	f	\N	\N	1	\N	27249 Dottie Parkway	4d58bfe7-b728-4697-a8aa-f1bc44f87652	2021-01-01	\N	2022-02-14	\N	\N
+48	Arapahoe	Stefa	7681419526	2bhk	1874	$23737.72	$288069.08	semifurnished	bachlore, family	142	3	13	jrnazz	Binnie	2021-08-14	2021-09-19	Sidoney	f	\N	\N	1	\N	515 Union Point	821bc879-98d5-42cc-8936-ae395850314f	2021-01-01	\N	2022-02-14	\N	\N
+49	Manley	Siusan	8925391749	2bhk	1035	$13382.68	$464297.11	semifurnished	bachlore, family	1189	5	7	dioxor	Brand	2021-07-12	2021-06-25	Sapphira	f	\N	\N	1	\N	16 Macpherson Trail	e95be332-4ace-4a53-9edf-c232022ed1bb	2021-01-01	\N	2022-02-14	\N	\N
+50	Aberg	Orlan	2991337164	2bhk	1080	$40892.18	$433574.00	semifurnished	bachlore, family	324	3	1	xiyxpq	Cristina	2021-09-06	2021-08-06	Maris	f	\N	\N	1	\N	16 Hanson Center	7391d2c1-c7c3-4345-a0d8-9e8f240634a7	2021-01-01	\N	2022-02-14	\N	\N
+52	North	Deb	6175812863	2bhk	1684	$39269.92	$387583.56	semifurnished	bachlore, family	1308	1	2	schici	Gilburt	2021-05-25	2021-05-24	Saul	f	\N	\N	1	\N	1 Lillian Alley	6a122254-ca12-43e5-90d5-3a2316760ce2	2021-01-01	\N	2022-02-14	\N	\N
+53	John Wall	Kaye	9651968987	2bhk	1903	$15834.72	$107117.28	semifurnished	bachlore, family	764	3	5	yhfrdt	Ami	2021-10-10	2021-06-10	Blisse	f	\N	\N	1	\N	92 Waubesa Drive	4ebfe833-7401-47d5-ab68-e129da19bf40	2021-01-01	\N	2022-02-14	\N	\N
+54	Bartillon	Elspeth	5165462904	2bhk	409	$34735.82	$331049.09	semifurnished	bachlore, family	361	2	10	xhrrrd	Elias	2021-09-06	2021-07-08	Kerrill	f	\N	\N	1	\N	55411 Melody Hill	2a92aa77-1e5d-4205-9e84-9c661645425f	2021-01-01	\N	2022-02-14	\N	\N
+55	Jay	Steffen	1804940188	2bhk	2231	$48751.11	$394404.86	semifurnished	bachlore, family	1899	1	8	qptjwb	Towney	2021-07-10	2021-06-16	Marika	f	\N	\N	1	\N	174 Blue Bill Park Road	d3f43f80-d655-4447-9b43-49ba03094a42	2021-01-01	\N	2022-02-14	\N	\N
+56	Fairview	Meggi	7561705761	2bhk	1670	$30833.25	$167837.88	semifurnished	bachlore, family	741	1	14	mixtiq	Winnifred	2021-10-01	2022-01-03	Wenonah	f	\N	\N	1	\N	9 Northview Center	394446d6-1211-42b1-9ce4-374a3d19e96b	2021-01-01	\N	2022-02-14	\N	\N
+58	Monument	Noel	5533155973	2bhk	1057	$10529.81	$297677.44	semifurnished	bachlore, family	1393	3	4	szdwuw	Taite	2021-12-12	2021-05-09	Conan	f	\N	\N	1	\N	423 Pierstorff Road	d023b460-655e-4386-82ba-41cf2675826a	2021-01-01	\N	2022-02-14	\N	\N
+59	International	Lyndsey	2139695827	2bhk	646	$11408.80	$234103.22	semifurnished	bachlore, family	1147	1	2	kunrlk	Patricio	2022-01-03	2021-03-27	Calvin	f	\N	\N	1	\N	332 Walton Crossing	2c0dd37c-c24b-422e-849f-41671371182b	2021-01-01	\N	2022-02-14	\N	\N
+60	Claremont	Pepe	5477453704	2bhk	2298	$47611.21	$455766.44	semifurnished	bachlore, family	1373	4	13	lnwmib	Daphene	2021-10-21	2021-07-16	Lidia	f	\N	\N	1	\N	1300 Debra Hill	cadf2242-98e4-4569-8eb3-2e927feb6e27	2021-01-01	\N	2022-02-14	\N	\N
+61	Roth	Corella	6569920530	2bhk	668	$23644.92	$449942.92	semifurnished	bachlore, family	1339	3	8	zfhhqi	Artemus	2021-02-20	2022-01-15	Allyn	f	\N	\N	1	\N	03658 Meadow Ridge Way	2992352f-0e82-4b53-88e6-1149d5706cd0	2021-01-01	\N	2022-02-14	\N	\N
+62	Merchant	Cordell	9529948439	2bhk	696	$28382.89	$233813.11	semifurnished	bachlore, family	1592	5	14	zenbwd	Krispin	2021-10-17	2021-12-25	Rochella	f	\N	\N	1	\N	4623 3rd Road	05b9cfbe-b141-4ec3-a2e5-a739ab74a2cb	2021-01-01	\N	2022-02-14	\N	\N
+63	Westport	Dick	7455597110	2bhk	1194	$32525.33	$249302.73	semifurnished	bachlore, family	1549	3	10	pjcmyd	Madlen	2021-11-04	2021-05-03	Robbie	f	\N	\N	1	\N	00 Del Sol Road	3ea14fbd-ef85-46b4-b63b-588c293c2183	2021-01-01	\N	2022-02-14	\N	\N
+64	5th	Harp	2304768534	2bhk	703	$17983.21	$179795.15	semifurnished	bachlore, family	139	1	1	fefcfa	Aurea	2021-10-06	2021-07-11	Fionnula	f	\N	\N	1	\N	65 Memorial Court	3adef83c-7d26-45f0-b644-1d9b6fbd4e36	2021-01-01	\N	2022-02-14	\N	\N
+65	Carpenter	Ilise	2555675313	2bhk	1515	$21130.66	$212570.44	semifurnished	bachlore, family	387	3	1	llwjcz	Obie	2021-04-22	2021-06-28	Hurleigh	f	\N	\N	1	\N	763 Spenser Hill	6180445d-6c63-4681-8139-9b7fda6f6c08	2021-01-01	\N	2022-02-14	\N	\N
+66	Veith	Faye	2965756252	2bhk	952	$24500.26	$487020.08	semifurnished	bachlore, family	393	4	3	pckkmj	Arlen	2021-04-21	2021-08-01	Thatcher	f	\N	\N	1	\N	915 Hayes Point	f4e85c74-a871-4bf3-9f5f-f21e5802ad92	2021-01-01	\N	2022-02-14	\N	\N
+67	Judy	Tiebold	6516592065	2bhk	2075	$48271.20	$382642.23	semifurnished	bachlore, family	710	3	13	iwtvjo	Hermine	2021-04-03	2021-02-28	Amelita	f	\N	\N	1	\N	9574 Mcguire Hill	9c06d5c0-ab83-434a-ad9a-a86c086ba795	2021-01-01	\N	2022-02-14	\N	\N
+68	Chive	Aubrey	3534352021	2bhk	1420	$47575.02	$135575.56	semifurnished	bachlore, family	1037	3	8	vykbsf	Poul	2021-07-06	2021-07-12	Birk	f	\N	\N	1	\N	8 Bayside Junction	11d0b143-d526-4c9b-bfe0-26b3d39d8b42	2021-01-01	\N	2022-02-14	\N	\N
+69	Stone Corner	Halli	4511946732	2bhk	1844	$33934.59	$498668.21	semifurnished	bachlore, family	497	1	8	kyqwhq	Timothee	2021-08-19	2022-01-19	Irv	f	\N	\N	1	\N	6684 Sachtjen Parkway	559482da-85d4-4def-b915-392e7c02b28a	2021-01-01	\N	2022-02-14	\N	\N
+70	Del Sol	Rawley	9918344912	2bhk	2028	$29723.74	$186723.22	semifurnished	bachlore, family	1357	4	4	zmuoap	Florinda	2021-03-20	2021-03-12	Angelina	f	\N	\N	1	\N	4 Hagan Crossing	7f794822-f21a-40e3-bf06-01596182d5b8	2021-01-01	\N	2022-02-14	\N	\N
+1	Sherman	Filia	2143060589	2bhk	1293	$35327.14	$290326.95	semifurnished	bachlore, family	180	2	4	rrshjl	Hanson	2021-05-29	2021-02-14	Daveta	f	\N	\N	1	\N	9 Burning Wood Junction	c98d1f6d-17ed-46a5-a1df-198400fd8d87	2021-01-01	\N	2022-02-17	\N	\N
+57	Nevada	Guy	8659552027	2bhk	2323	$28028.71	$193252.75	semifurnished	bachlore, family	1055	4	8	nerepi	Emmerich	2021-07-23	2022-02-21	admin	f	\N	\N	1	78000	14 Sheridan Street	a6787615-1f14-4365-a0ac-b9139042eef4	2021-01-01	\N	2022-02-14	\N	\N
+71	School	Marsiella	3373353082	2bhk	1651	$21054.48	$395795.56	semifurnished	bachlore, family	142	5	9	qrcxez	Gnni	2021-05-29	2021-05-20	Angel	f	\N	\N	1	\N	77 Sunnyside Park	f5910ed0-c1be-4def-8c4d-07add3970e6b	2021-01-01	\N	2022-02-14	\N	\N
+77	Browning	Danyelle	3534364225	2bhk	508	$20297.67	$330831.75	semifurnished	bachlore, family	1222	2	9	kshnvc	Elizabet	2021-03-11	2021-04-11	Gusty	f	\N	\N	1	\N	0 Golf Place	01e1e07f-5801-4ebe-a926-b9986b9ea313	2021-01-01	\N	2022-02-14	\N	\N
+78	Oak Valley	Haskell	3423392324	2bhk	2172	$14683.10	$469878.26	semifurnished	bachlore, family	401	5	1	alttfv	Buddy	2021-08-04	2021-12-23	Tawnya	f	\N	\N	1	\N	365 Spenser Junction	97952f16-9e8a-41d8-bf33-11b4c8a1fe25	2021-01-01	\N	2022-02-14	\N	\N
+79	Melvin	Carolina	3425882296	2bhk	679	$28656.40	$388562.82	semifurnished	bachlore, family	1669	2	12	pclfas	Sebastian	2021-08-03	2021-05-24	Ferris	f	\N	\N	1	\N	51 Lien Alley	760fc74c-8356-46c5-a3ad-8c7ef9b93449	2021-01-01	\N	2022-02-14	\N	\N
+80	Shoshone	Filippo	8693846742	2bhk	1661	$33479.00	$389800.34	semifurnished	bachlore, family	1875	3	12	vilnax	Elnore	2021-07-03	2022-01-22	Barrie	f	\N	\N	1	\N	17 Redwing Road	aba2ade2-31b4-4e0d-a39b-4b88e647f178	2021-01-01	\N	2022-02-14	\N	\N
+81	Vidon	Rebecca	2272214755	2bhk	1799	$24962.18	$271900.20	semifurnished	bachlore, family	679	5	8	toqzce	Stanfield	2021-08-02	2021-04-09	Letty	f	\N	\N	1	\N	8157 Paget Hill	59ed3545-6163-4890-bc49-ac6cb5d12e99	2021-01-01	\N	2022-02-14	\N	\N
+82	Lillian	Ker	5287070987	2bhk	1493	$18329.69	$477700.40	semifurnished	bachlore, family	356	2	2	qmsmaf	Leia	2021-03-08	2022-02-05	Katuscha	f	\N	\N	1	\N	2588 Roth Hill	5f0efb49-ff5e-4dd0-988d-45c7e59edac7	2021-01-01	\N	2022-02-14	\N	\N
+83	Dayton	Vilhelmina	7548378967	2bhk	1168	$22633.22	$455568.25	semifurnished	bachlore, family	1379	5	13	jjohcc	Osborne	2021-02-25	2021-04-16	Kizzee	f	\N	\N	1	\N	23 Reindahl Circle	d4697e83-ca08-4a8d-8131-5da8a444067d	2021-01-01	\N	2022-02-14	\N	\N
+84	Hanson	Elana	3219566840	2bhk	490	$35184.42	$150525.11	semifurnished	bachlore, family	1410	2	9	wzhcdj	Jeffy	2021-03-14	2021-05-22	Coral	f	\N	\N	1	\N	96 Montana Way	c0e37a92-8c41-46e6-87cc-66558b6ac488	2021-01-01	\N	2022-02-14	\N	\N
+85	Bartelt	Case	4721035775	2bhk	976	$31216.38	$351110.32	semifurnished	bachlore, family	211	4	8	mgrdwz	Findley	2021-10-17	2021-10-01	Augusta	f	\N	\N	1	\N	4992 Autumn Leaf Road	145073e6-e303-4a30-8390-3677b367d68f	2021-01-01	\N	2022-02-14	\N	\N
+86	Talmadge	Allissa	4526542063	2bhk	967	$26121.51	$321770.08	semifurnished	bachlore, family	1354	3	7	ndwniz	Ronald	2021-03-05	2021-04-03	Bobinette	f	\N	\N	1	\N	9344 Shoshone Pass	5b34ff9e-9d5b-4ab9-95e5-e9b3cf57aff8	2021-01-01	\N	2022-02-14	\N	\N
+87	Vermont	Garvin	8511500061	2bhk	2092	$47871.28	$122667.32	semifurnished	bachlore, family	826	4	11	tcisjq	Iolande	2021-11-09	2022-01-19	Germayne	f	\N	\N	1	\N	990 Michigan Pass	bef28d68-a574-4d1e-ae77-c8b6d5527022	2021-01-01	\N	2022-02-14	\N	\N
+88	Delladonna	Nanci	3525691084	2bhk	1162	$17634.20	$220866.84	semifurnished	bachlore, family	1878	5	4	falehi	Gracia	2021-07-01	2021-08-14	Yves	f	\N	\N	1	\N	2 Burrows Drive	19c500f9-1715-4a3e-997b-85e1b0bfee66	2021-01-01	\N	2022-02-14	\N	\N
+89	Northport	Olympie	7314355385	2bhk	659	$27161.93	$215516.08	semifurnished	bachlore, family	485	2	11	hadirq	Husein	2021-08-17	2022-01-13	Nertie	f	\N	\N	1	\N	23 Lakewood Plaza	8f99e2a6-9b95-4f1e-9160-5d8c0ce1e57d	2021-01-01	\N	2022-02-14	\N	\N
+90	Sheridan	Cassandre	4738279283	2bhk	1737	$17191.28	$484703.37	semifurnished	bachlore, family	1358	3	7	wttgry	Desi	2021-02-11	2022-01-14	Aura	f	\N	\N	1	\N	78 Cambridge Circle	0021bd5a-5dab-4a29-9224-d4d4ac90c2a2	2021-01-01	\N	2022-02-14	\N	\N
+91	Paget	Alicea	5716268677	2bhk	1678	$45815.08	$254977.52	semifurnished	bachlore, family	196	5	2	dlrpak	Marcile	2021-12-23	2021-09-15	Nesta	f	\N	\N	1	\N	773 Merchant Center	63a51b31-1f47-4662-929e-058e4d47b7fc	2021-01-01	\N	2022-02-14	\N	\N
+92	Tomscot	Jere	1481224302	2bhk	1075	$40667.04	$389486.09	semifurnished	bachlore, family	1689	1	10	growht	Allene	2021-08-25	2021-03-16	Dodie	f	\N	\N	1	\N	57687 Texas Pass	a949f2a0-387c-4791-911e-45cfb0efb33a	2021-01-01	\N	2022-02-14	\N	\N
+93	Waywood	Shandie	8652557049	2bhk	2212	$41611.55	$377699.38	semifurnished	bachlore, family	1508	3	8	tyjyql	Corine	2021-05-03	2021-07-16	Fenelia	f	\N	\N	1	\N	73918 Manufacturers Alley	0593efd2-8a3e-4f07-8b71-78b5bb6f6a9d	2021-01-01	\N	2022-02-14	\N	\N
+94	Dottie	Roselin	4473359881	2bhk	1205	$34691.71	$413743.25	semifurnished	bachlore, family	1186	3	14	vzfypx	Dianne	2021-06-09	2021-03-06	Mariana	f	\N	\N	1	\N	219 Service Way	01f8408a-ac77-43d9-acca-17273eae244a	2021-01-01	\N	2022-02-14	\N	\N
+95	Barby	Royce	3286932346	2bhk	2305	$47776.25	$118468.62	semifurnished	bachlore, family	1090	4	1	cipfby	Julia	2021-10-21	2022-01-31	Marie	f	\N	\N	1	\N	50394 Parkside Point	ea88adc5-d1d1-4b2b-afe2-985458e5dbd5	2021-01-01	\N	2022-02-14	\N	\N
+96	Arapahoe	Orbadiah	9866705820	2bhk	551	$27089.19	$121722.51	semifurnished	bachlore, family	728	5	5	zwffgy	Tessy	2021-06-16	2021-10-25	Joby	f	\N	\N	1	\N	2536 Vidon Junction	7f3714e8-3787-4d54-baf5-8440f5546110	2021-01-01	\N	2022-02-14	\N	\N
+97	Namekagon	Caitrin	3004010349	2bhk	1108	$47244.54	$421747.72	semifurnished	bachlore, family	637	5	8	aiewgs	Claudie	2021-08-14	2021-03-15	Conny	f	\N	\N	1	\N	951 Portage Lane	da6c418f-fa78-46c6-8269-ecfbc139d5ed	2021-01-01	\N	2022-02-14	\N	\N
+98	Goodland	Sonia	2356857047	2bhk	574	$24671.14	$331881.87	semifurnished	bachlore, family	327	2	6	aqlrns	Roman	2021-10-20	2021-09-18	Agnes	f	\N	\N	1	\N	0 Bayside Way	5a02f190-a486-4afd-91f2-a246adfc6e26	2021-01-01	\N	2022-02-14	\N	\N
+99	Washington	Orelee	2937083702	2bhk	845	$33629.00	$202775.19	semifurnished	bachlore, family	1902	1	11	rskesd	Brantley	2021-11-12	2021-05-06	Sal	f	\N	\N	1	\N	8185 Melody Alley	f6e50f55-d5c1-4ce4-80b2-bef2e4d217ba	2021-01-01	\N	2022-02-14	\N	\N
+100	Sunfield	Raimundo	9978701572	2bhk	1404	$16342.69	$489628.68	semifurnished	bachlore, family	1950	4	13	ounrdt	Kimmy	2021-10-13	2021-06-28	Fin	f	\N	\N	1	\N	9 Arizona Circle	3ef0bcc0-71ce-4997-86fc-037f029aff8d	2021-01-01	\N	2022-02-14	\N	\N
+72	Harper	Tawsha	8719221645	2bhk	2056	$49895.32	$259537.91	semifurnished	bachlore, family	437	3	9	zyefme	Layney	2021-04-24	2022-01-31	Lucais	f	\N	\N	1	\N	111 4th Street	12fe4668-f717-48cb-8a4a-15013c13b498	2021-01-01	\N	2022-02-14	\N	\N
+73	Hovde	Lira	4089021474	2bhk	2426	$18690.03	$335605.84	semifurnished	bachlore, family	349	2	9	tfluys	Ninetta	2021-10-18	2021-11-05	Estele	f	\N	\N	1	\N	3 Kinsman Court	5506f653-72e4-42a1-af6f-8b497c933667	2021-01-01	\N	2022-02-14	\N	\N
+74	Paget	Griffie	7132551844	2bhk	800	$11702.96	$407352.93	semifurnished	bachlore, family	75	2	1	zxcaom	Bethina	2022-01-10	2021-05-01	Thorsten	f	\N	\N	1	\N	2 High Crossing Pass	810bf396-94ca-4504-bce3-4ab74c6f2a9e	2021-01-01	\N	2022-02-14	\N	\N
+75	Vahlen	Marc	3681608913	2bhk	1593	$24229.75	$482250.54	semifurnished	bachlore, family	483	3	9	nvbtgi	Kain	2021-09-21	2021-12-23	Osgood	f	\N	\N	1	\N	7 Cherokee Alley	c98a725d-f551-4867-94d9-265faff7e229	2021-01-01	\N	2022-02-14	\N	\N
+76	Hanover	Jemie	6956952878	2bhk	1560	$14121.80	$489173.85	semifurnished	bachlore, family	1099	1	11	vhdpws	Orville	2021-03-21	2021-12-24	Florance	f	\N	\N	1	\N	7652 Gale Terrace	df5bf614-7104-4983-980d-1506ed74e23d	2021-01-01	\N	2022-02-14	\N	\N
+\.
+
+
+--
+-- TOC entry 3182 (class 0 OID 59083)
+-- Dependencies: 209
+-- Data for Name: rentalleadsfeedback; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.rentalleadsfeedback (rentalfbid, description, createdby, createddate, updatedby, updateddate, isdeleted, deletedate, deleteby, rentalleadsid, followupdate) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3184 (class 0 OID 59091)
+-- Dependencies: 211
+-- Data for Name: resaleleads; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.resaleleads (resaleid, societyname, leadname, mobile, bhk, sqft, floor, furnishedstatus, flatno, wingno, poss, createdby, createddate, updatedby, updateddate, isdeleted, deleteby, deletedate, "assignedTo", brokerage, location, price, leadid, leadgenerationdate, "leadStatus", "followUpDate", email, "PropertyId") FROM stdin;
+89	Saint Paul	Skipton	2308101713	2bhk	1422	8	semifurnished	1414	1	nbmutw	Antonius	2021-03-27	admin	2022-02-18	f	admin	2022-02-17	1	222	0 Columbus Lane	50211121	3ad7aa7d-8d42-49f7-9f71-5e9dbe302d8b	2021-01-01	Follow Up	2022-02-21	\N	\N
+3	Golf View	Cody	2608388451	2bhk	1609	8	semifurnished	1317	2	jgsfns	Kimball	2021-11-02	Archer	2021-06-23	f	\N	\N	1	\N	14584 Sycamore Park	89165042	50480e32-f5ad-4844-b9e3-5a864e16855a	2021-01-01	\N	2022-02-20	\N	\N
+4	Portage	Dominique	5845981177	2bhk	799	13	semifurnished	912	5	ikzscd	Dennie	2021-10-08	Felipa	2021-12-25	f	\N	\N	1	\N	150 Manufacturers Junction	97616997	847c2e7f-c0f3-4531-b89e-ebcbbaa5d0c5	2021-01-01	\N	2022-02-20	\N	\N
+5	Ramsey	Kristien	4482542498	2bhk	1942	2	semifurnished	781	2	fnyyvy	Tabbie	2021-10-26	Erny	2021-11-01	f	\N	\N	1	\N	576 Little Fleur Lane	69174513	ab747ce5-b8b0-4f27-999a-2e0753d18b4e	2021-01-01	\N	2022-02-20	\N	\N
+67	Colorado	Delbert	4521639383	2bhk	2113	12	semifurnished	601	5	wabtgh	Rosalynd	2021-12-17	Joly	2021-08-29	f	\N	\N	1	\N	68 Corscot Pass	23452848	bbbaf61b-fb5b-4942-87a6-83b2af6b77ef	2021-01-01	\N	2022-02-14	\N	\N
+68	Fordem	Emmerich	7903873583	2bhk	1131	2	semifurnished	238	2	qmrzpf	Alina	2021-03-06	Noellyn	2021-09-02	f	\N	\N	1	\N	19007 Arkansas Point	54028679	cd32aeac-7e61-4e79-b7e3-243ea5c57cdf	2021-01-01	\N	2022-02-14	\N	\N
+69	Northview	Sheree	2472897135	2bhk	457	4	semifurnished	608	4	gcannh	Deanne	2021-02-18	Aldus	2021-11-09	f	\N	\N	1	\N	4667 Pierstorff Parkway	745898	14653e69-07ba-43e2-a809-90b112e891bb	2021-01-01	\N	2022-02-14	\N	\N
+70	Packers	Thorpe	8715459891	2bhk	1880	8	semifurnished	1025	5	hcmshb	Egon	2021-06-28	Alisa	2021-08-28	f	\N	\N	1	\N	642 Alpine Junction	33222342	f1902507-8351-4623-b988-3af566a5c9ef	2021-01-01	\N	2022-02-14	\N	\N
+71	Northwestern	Paule	4881187506	2bhk	1221	10	semifurnished	135	3	mfjhzq	Camey	2021-02-12	Delly	2021-06-23	f	\N	\N	1	\N	2 Vernon Hill	25419744	bc827774-d9d8-4137-bd74-bb517f87c1c8	2021-01-01	\N	2022-02-14	\N	\N
+72	Hudson	Marie-ann	6568168084	2bhk	2284	3	semifurnished	1311	3	szwpeq	Iorgos	2021-02-19	Carlyle	2021-10-24	f	\N	\N	1	\N	5 Larry Crossing	27959585	a68a7a1b-8222-44bd-85a4-bb9e5d33fc0f	2021-01-01	\N	2022-02-14	\N	\N
+73	Mosinee	Trip	9781765266	2bhk	1035	7	semifurnished	412	5	drutgm	Phineas	2021-11-21	Rori	2021-10-10	f	\N	\N	1	\N	4933 Elka Alley	428012	58b8c67b-ad33-428b-b5e3-dd446a7d2630	2021-01-01	\N	2022-02-14	\N	\N
+75	Pawling	Giordano	9128252522	2bhk	1410	7	semifurnished	935	2	ezzkjv	Garvin	2021-05-21	Terri-jo	2021-09-25	f	\N	\N	1	\N	1 Independence Parkway	81341279	56d6a954-1feb-4663-91c8-a6dc825d9b7f	2021-01-01	\N	2022-02-14	\N	\N
+76	Anniversary	Rodge	8399320966	2bhk	1424	6	semifurnished	857	3	trzkkl	Fiorenze	2021-05-27	Kat	2021-04-20	f	\N	\N	1	\N	41 Aberg Parkway	3371601	e12aa98d-378d-4f9a-bf37-a5084af45a60	2021-01-01	\N	2022-02-14	\N	\N
+77	Mariners Cove	Sarette	5696516895	2bhk	640	10	semifurnished	1170	4	obgcec	Osbourne	2021-11-01	Brigitta	2022-02-06	f	\N	\N	1	\N	59809 Marcy Crossing	88792736	e6b83910-3573-4279-b71f-74c01b3cf15e	2021-01-01	\N	2022-02-14	\N	\N
+78	Petterle	Melisandra	7361494073	2bhk	1594	12	semifurnished	1797	5	weigtp	Isobel	2021-06-18	Langston	2021-12-13	f	\N	\N	1	\N	865 Memorial Point	63347272	108518c3-2420-477d-b0df-d9b836da6260	2021-01-01	\N	2022-02-14	\N	\N
+79	Lunder	Aviva	9319130756	2bhk	2372	14	semifurnished	304	2	xptwnu	Madison	2021-04-24	Jonas	2021-03-30	f	\N	\N	1	\N	3 Eliot Plaza	95167306	1eb25ec2-ff30-4cbd-b823-0798d46af460	2021-01-01	\N	2022-02-14	\N	\N
+80	Riverside	Tova	7804318214	2bhk	804	6	semifurnished	627	4	nuwwcq	Barth	2021-10-09	Rori	2021-11-11	f	\N	\N	1	\N	907 Northridge Avenue	41545099	9b96127f-3ffc-4089-8617-5d00f534d60d	2021-01-01	\N	2022-02-14	\N	\N
+81	Browning	Pate	7053521883	2bhk	888	12	semifurnished	574	2	mirmgc	Marylou	2021-05-01	Evey	2021-08-24	f	\N	\N	1	\N	41 Roxbury Park	25840589	b987b01c-a3c3-460b-afa3-56369f8807fd	2021-01-01	\N	2022-02-14	\N	\N
+52	Bay	Corrina	5033518498	2bhk	2397	12	semifurnished	1622	3	odrphm	Paxon	2021-05-31	admin	2022-02-17	f	\N	\N	1	\N	09 Hayes Terrace	29070095	209345ce-156a-4f49-bea6-0c15a951ed75	2021-01-01	Follow Up	2022-02-14	\N	\N
+82	Roth	Amandy	8853536014	2bhk	2094	8	semifurnished	1609	5	wczgvc	Noll	2021-05-19	Babb	2021-12-26	f	\N	\N	1	\N	63169 Hayes Parkway	24427935	32773c7c-bb83-4ab6-ab6c-17d117aa11ec	2021-01-01	\N	2022-02-14	\N	\N
+83	Elka	Wilbert	6334895962	2bhk	963	2	semifurnished	1076	3	rorakf	Laughton	2021-11-23	Traci	2021-08-10	f	\N	\N	1	\N	88 Hoard Junction	77543771	270c5642-17ba-4f9d-aa38-3a094bd59b4f	2021-01-01	\N	2022-02-14	\N	\N
+84	Kinsman	Raddie	9326073521	2bhk	2362	3	semifurnished	1013	3	nqzpes	Eleonore	2021-12-23	Lucilia	2021-12-31	f	\N	\N	1	\N	31720 Fairfield Place	58318160	65103263-49e9-4d24-ba6d-fd0e2db0d540	2021-01-01	\N	2022-02-14	\N	\N
+85	Dayton	Rois	3212707673	2bhk	2458	10	semifurnished	963	5	edtzbx	Jerrilyn	2021-02-13	Richard	2021-02-18	f	\N	\N	1	\N	86478 Jenna Way	28140915	78cbfbf7-b130-4cd4-8a78-50dcbab5826a	2021-01-01	\N	2022-02-14	\N	\N
+86	Grover	Goldarina	2392336654	2bhk	1858	1	semifurnished	747	3	oczzle	Kennedy	2021-10-17	Rois	2021-02-24	f	\N	\N	1	\N	673 East Trail	41147743	bd08034e-3f18-4618-b216-9e9820736666	2021-01-01	\N	2022-02-14	\N	\N
+87	Hoffman	Pyotr	1062213892	2bhk	2196	14	semifurnished	1298	2	udmdxt	Olivier	2021-08-25	Candy	2021-04-16	f	\N	\N	1	\N	17 Boyd Way	81981996	5bca6f39-9429-45c3-8560-6b335d72f347	2021-01-01	\N	2022-02-14	\N	\N
+88	Elka	Smith	5153702323	2bhk	556	3	semifurnished	787	1	pycaho	Brana	2021-10-25	Hodge	2021-08-02	f	\N	\N	1	\N	909 Veith Street	85259832	7d5eee0b-93a0-4ad7-9f90-f5bea34e87a0	2021-01-01	\N	2022-02-14	\N	\N
+90	Grim	Pen	6497797720	2bhk	2161	11	semifurnished	59	3	nxcked	Katti	2021-02-07	Ferd	2021-11-21	f	\N	\N	1	\N	72262 School Trail	72587098	d5737510-c495-4702-acba-efa38fd5392c	2021-01-01	\N	2022-02-14	\N	\N
+91	Sachs	Micky	5835803553	2bhk	1593	10	semifurnished	427	3	kxqsyx	Rudyard	2021-04-10	Stesha	2021-10-26	f	\N	\N	1	\N	5 Bunting Circle	68608050	dc5d0d3a-b230-4e0a-9b6f-da10059974f9	2021-01-01	\N	2022-02-14	\N	\N
+92	Morning	Palm	5101196951	2bhk	2087	2	semifurnished	1015	5	gzomrw	Terry	2021-04-12	Nial	2022-01-17	f	\N	\N	1	\N	2 Anzinger Terrace	10775412	1c6be3b2-31b4-4194-a156-ff288272e064	2021-01-01	\N	2022-02-14	\N	\N
+6	Scott	Elke	5222763119	2bhk	2298	10	semifurnished	80	5	egrymw	Terry	2021-08-23	Tommie	2022-01-13	f	\N	\N	1	\N	0184 Surrey Parkway	70793057	3e0ff95d-4986-4ff3-9bf2-9cd7422be066	2021-01-01	\N	2022-02-14	\N	\N
+7	American	Aluin	5061282915	2bhk	998	12	semifurnished	343	1	ivzmvq	Aurie	2022-01-28	Zena	2021-07-26	f	\N	\N	1	\N	5703 Kedzie Alley	81465509	3c0ae9fc-a56c-4ad9-aa82-f1d5d2ff4c59	2021-01-01	\N	2022-02-14	\N	\N
+8	Cambridge	Hyacinthe	5336826615	2bhk	1248	1	semifurnished	1531	2	qhviwa	Rennie	2021-12-14	Dorry	2021-12-06	f	\N	\N	1	\N	40226 Lunder Road	11505979	3d492eeb-a050-486b-af48-c87fa7cfa872	2021-01-01	\N	2022-02-14	\N	\N
+9	Autumn Leaf	Elinor	9072490100	2bhk	667	9	semifurnished	1101	2	lrajrh	Quillan	2021-12-01	Arabela	2021-03-05	f	\N	\N	1	\N	8100 Lakewood Lane	91565486	b1c57efe-58dd-4b13-ab44-23d4d3de1558	2021-01-01	\N	2022-02-14	\N	\N
+10	Lakewood Gardens	Eustace	8815016102	2bhk	2464	2	semifurnished	1109	3	nimqnl	Dud	2021-07-30	Douglass	2021-07-23	f	\N	\N	1	\N	8079 Dawn Pass	81566779	855cc600-c041-4388-9cfb-8940e0b281ab	2021-01-01	\N	2022-02-14	\N	\N
+11	Meadow Vale	Isabel	7727485921	2bhk	434	7	semifurnished	1388	2	xbgxdz	Lyman	2021-02-18	Boony	2021-11-17	f	\N	\N	1	\N	90 Melody Street	89121026	d24a5dd0-6926-4413-a244-ac33b8cb16a7	2021-01-01	\N	2022-02-14	\N	\N
+12	Jenna	Leopold	8016093751	2bhk	568	2	semifurnished	1294	5	msuqqk	Verina	2021-10-08	Valentino	2021-09-11	f	\N	\N	1	\N	34 Superior Street	39493956	c3e84b58-094b-44a0-b965-c39f1b3c9c7b	2021-01-01	\N	2022-02-14	\N	\N
+13	Eagan	Pauline	1897282611	2bhk	964	2	semifurnished	193	5	vfoild	Rosalie	2022-01-14	Erna	2021-06-08	f	\N	\N	1	\N	4722 Gateway Court	71513831	485026ae-7b5d-42f1-a224-05ba9dcd23be	2021-01-01	\N	2022-02-14	\N	\N
+14	Esch	Lory	1199161654	2bhk	916	12	semifurnished	1745	4	ipyomj	Rosaleen	2021-10-17	Alyda	2021-05-09	f	\N	\N	1	\N	837 Sutteridge Lane	4957255	d1ea169f-1148-4bb3-bc16-7e82db913ad3	2021-01-01	\N	2022-02-14	\N	\N
+15	Pierstorff	Halie	4473831213	2bhk	1756	2	semifurnished	347	1	vlinex	Betti	2021-05-22	Benyamin	2022-01-26	f	\N	\N	1	\N	84300 Pleasure Way	68767453	8a5073f5-e6b9-48d4-9a05-e1ef1c14c2b7	2021-01-01	\N	2022-02-14	\N	\N
+16	Manley	Dukie	5213773622	2bhk	2327	6	semifurnished	1513	1	nugqrc	Harriott	2021-05-14	Alisun	2021-11-26	f	\N	\N	1	\N	8 Pankratz Drive	39492942	0e8b25e9-b60b-462c-8dc0-1b661ffd415d	2021-01-01	\N	2022-02-14	\N	\N
+17	Sauthoff	Madelena	6293533494	2bhk	671	7	semifurnished	255	3	xzlfjn	Barnie	2021-02-07	Lucille	2021-08-25	f	\N	\N	1	\N	20758 Cambridge Lane	36226465	7a149402-d49e-4590-a625-887e018a9771	2021-01-01	\N	2022-02-14	\N	\N
+93	Johnson	Marcelline	5633921554	2bhk	591	8	semifurnished	1485	4	qdwlvx	Jessamyn	2021-02-12	Lily	2021-03-20	f	\N	\N	1	\N	92270 Ruskin Terrace	1790266	9d576192-a42e-4748-9869-caa98c145195	2021-01-01	\N	2022-02-14	\N	\N
+94	Division	Nanice	5304894413	2bhk	934	4	semifurnished	769	4	ntfzuq	Wolfy	2021-06-12	Locke	2021-04-02	f	\N	\N	1	\N	29 Blaine Drive	89522554	7436efc8-1954-430c-acde-50f6612df00a	2021-01-01	\N	2022-02-14	\N	\N
+95	Grover	Charlene	6857205679	2bhk	2137	15	semifurnished	1639	2	xiaini	Reid	2021-06-19	Donetta	2021-12-07	f	\N	\N	1	\N	540 Portage Way	49398737	7a8be5e5-1876-42d8-9575-1fab0e89f7be	2021-01-01	\N	2022-02-14	\N	\N
+96	Algoma	Desirae	2134517095	2bhk	873	9	semifurnished	563	4	fsrzes	Kassey	2022-01-13	Ninnette	2021-09-28	f	\N	\N	1	\N	39086 Kennedy Plaza	590568	28bcfa22-e3e3-49d0-a240-df375d6cdaf2	2021-01-01	\N	2022-02-14	\N	\N
+97	Merrick	Garold	9916375246	2bhk	466	14	semifurnished	942	4	synbvb	Nefen	2021-12-18	Hector	2022-02-01	f	\N	\N	1	\N	422 Hudson Terrace	17984920	c96d5dd3-10d0-40c3-befc-f726ae5ebd3c	2021-01-01	\N	2022-02-14	\N	\N
+98	Dakota	Eziechiele	5764767528	2bhk	2430	6	semifurnished	1799	5	pyqtkt	Lauren	2021-07-22	Pierson	2021-06-26	f	\N	\N	1	\N	9 Eliot Court	51747559	14514da7-1456-4cea-904e-80888a8f8567	2021-01-01	\N	2022-02-14	\N	\N
+99	Dahle	Lena	8641871391	2bhk	1787	8	semifurnished	1076	2	chxmdm	Jeremiah	2021-09-28	Oswald	2021-02-07	f	\N	\N	1	\N	2798 Everett Trail	95923747	617d04f4-9746-4395-952f-158c4d5dfa5e	2021-01-01	\N	2022-02-14	\N	\N
+100	Mitchell	Dale	7184744480	2bhk	934	3	semifurnished	223	3	isiujh	Onofredo	2021-09-02	Pansy	2021-11-04	f	\N	\N	1	\N	481 Grim Junction	91866640	2817af0f-73b2-441a-8242-6e846ef96286	2021-01-01	\N	2022-02-14	\N	\N
+1	Porter	Grier	2562534706	2bhk	771	3	semifurnished	970	1	zrhjlm	Lotty	2021-12-04	Zelda	2021-11-11	f	\N	\N	1	\N	9149 Dayton Center	1235655	3d0b6be6-9a33-4f7d-9fcb-577454817664	2021-01-01	\N	2022-02-17	\N	\N
+2	Monument	Kylie	2967894476	2bhk	946	14	semifurnished	1871	3	fxtobm	Rozalie	2022-01-06	admin	2022-02-18	f	\N	\N	1	\N	5 Melvin Trail	70208432	7adfc69c-70eb-45bd-b526-82fe1e82c2ab	2021-01-01	Shared Details	2022-02-20	\N	\N
+36	Algoma	Dallon	3045642397	2bhk	2264	9	semifurnished	1941	2	zghcrb	Mignon	2021-10-20	Hillie	2021-04-19	f	\N	\N	1	\N	07 Mayer Court	9685913	b321e9fe-3542-451f-9760-7c9a43116b16	2021-01-01	Shared Details	2022-02-17	\N	\N
+18	Trailsway	Keane	1798614640	2bhk	1424	9	semifurnished	772	5	klhudl	Darya	2021-03-23	Aubree	2021-07-24	f	\N	\N	1	\N	910 Lillian Crossing	45881611	9d36b7ed-b682-4a24-843f-8fcba55147be	2021-01-01	\N	2022-02-14	\N	\N
+19	Logan	Benjie	4766292209	2bhk	1988	14	semifurnished	448	3	eyeixu	Aaren	2021-10-20	Levy	2021-12-17	f	\N	\N	1	\N	5 Iowa Park	15816646	4b083404-3be2-4ccd-b280-92fd4f7354f2	2021-01-01	\N	2022-02-14	\N	\N
+20	Johnson	Midge	6381196385	2bhk	1768	10	semifurnished	555	1	kemxif	Fayth	2021-11-05	Hillie	2021-12-24	f	\N	\N	1	\N	298 Transport Hill	81349526	13df0340-c7e8-4668-ac5a-26a3973d1e18	2021-01-01	\N	2022-02-14	\N	\N
+21	Twin Pines	Brigid	6557572549	2bhk	548	14	semifurnished	732	2	gunqfh	Andrej	2022-01-22	Thibaud	2021-10-03	f	\N	\N	1	\N	8268 Blaine Point	53769714	ee10e104-2fa7-4f16-9227-a6fae555c548	2021-01-01	\N	2022-02-14	\N	\N
+22	Northport	Vidovic	8087247030	2bhk	1287	13	semifurnished	1424	3	eyqhnr	Hal	2021-03-11	Kinny	2021-05-01	f	\N	\N	1	\N	4 Spenser Drive	23526914	58df4596-ea3b-4205-8de8-0a6727ceb43f	2021-01-01	\N	2022-02-14	\N	\N
+23	Warner	Randy	6399962849	2bhk	1275	9	semifurnished	621	2	dquqxj	Esma	2021-11-23	Kissiah	2021-04-11	f	\N	\N	1	\N	24 Oxford Way	29187967	4b66bb5f-a462-4835-b85d-c80f2519d4ae	2021-01-01	\N	2022-02-14	\N	\N
+24	Warbler	Krissie	6963363631	2bhk	1724	11	semifurnished	1621	5	irwsqp	Puff	2021-06-30	Minne	2021-11-01	f	\N	\N	1	\N	154 Heffernan Street	81236422	a1d73107-3a27-492a-a490-f95a96e0d422	2021-01-01	\N	2022-02-14	\N	\N
+25	Kedzie	Celine	6944522245	2bhk	756	14	semifurnished	130	1	rrgbkz	Odella	2021-02-21	Ardeen	2021-08-28	f	\N	\N	1	\N	20671 Lien Avenue	41966158	2471de7b-7b40-4de7-b465-232086f6c9fe	2021-01-01	\N	2022-02-14	\N	\N
+26	Bonner	Jacqui	5232538259	2bhk	1277	3	semifurnished	673	3	nnhvqh	Hanan	2021-07-18	Koo	2021-02-21	f	\N	\N	1	\N	39582 Mifflin Circle	86306466	7fe61630-238c-443e-a48d-a7d75d8be8a7	2021-01-01	\N	2022-02-14	\N	\N
+27	Eastlawn	Reese	9591568694	2bhk	1116	12	semifurnished	1322	1	nsvsek	Charyl	2021-09-19	Forster	2021-10-15	f	\N	\N	1	\N	0183 Hauk Pass	82464159	b73cd85a-d6da-43d4-aae7-9de55aa0483e	2021-01-01	\N	2022-02-14	\N	\N
+28	Gateway	Ellerey	9026565066	2bhk	1028	3	semifurnished	1746	1	skqyfc	Vallie	2021-09-01	Cyrill	2021-07-17	f	\N	\N	1	\N	531 Express Center	31385781	5ceaa015-91fc-449e-950c-03f88f683c7f	2021-01-01	\N	2022-02-14	\N	\N
+29	Schurz	Larry	2844934029	2bhk	960	14	semifurnished	764	1	aftkbg	Lucille	2021-08-17	Leandra	2021-03-16	f	\N	\N	1	\N	3 Warbler Trail	58220358	2899f6a0-900c-4c0c-8123-3c429a2d2aab	2021-01-01	\N	2022-02-14	\N	\N
+30	Melody	Jo ann	7573437233	2bhk	969	9	semifurnished	1540	1	pcgezy	Lynda	2021-10-14	Lief	2021-11-29	f	\N	\N	1	\N	649 Pierstorff Park	50003759	9b12181a-faf4-480f-a071-40f6dc717ff4	2021-01-01	\N	2022-02-14	\N	\N
+31	Eastwood	Velma	9291023773	2bhk	1498	4	semifurnished	1137	3	yxdmul	Buiron	2021-03-06	Martina	2021-05-15	f	\N	\N	1	\N	8386 Cherokee Pass	61008758	48d88479-06eb-4f5b-9079-2f0f1670b544	2021-01-01	\N	2022-02-14	\N	\N
+32	Rigney	Philip	8393587190	2bhk	938	11	semifurnished	661	2	ycgecw	Sunshine	2021-07-07	Ernie	2021-02-22	f	\N	\N	1	\N	436 Jackson Place	16255892	d571822c-8df1-4db9-93ab-fcd84a509916	2021-01-01	\N	2022-02-14	\N	\N
+37	School	Luce	3679045182	2bhk	2081	15	semifurnished	78	1	ekpkvx	Raimondo	2021-02-08	Ringo	2021-06-14	f	\N	\N	1	\N	1447 Gale Court	69061288	66c42262-8f98-4d93-b97e-2df0eb340532	2021-01-01	\N	2022-02-14	\N	\N
+39	Dakota	Rosalyn	1284139794	2bhk	2029	11	semifurnished	1952	5	lrfukv	Derrik	2021-11-13	Sibby	2022-01-04	f	\N	\N	1	\N	954 Golf Terrace	83119002	96a325b7-7cb8-4649-9de3-6add1a2ee969	2021-01-01	\N	2022-02-14	\N	\N
+74	East	Coleman	9227405899	2bhk	1377	10	semifurnished	1677	2	nqldlv	Malvin	2021-04-01	Krystalle	2021-03-15	f	\N	\N	1	\N	27 Nobel Junction	6406397	a7d60849-f0c7-40e4-9b06-b6541b4c4eb9	2021-01-01	\N	2022-02-14	\N	\N
+33	Havey	Thebault	7251467085	2bhk	742	6	semifurnished	546	4	mrqstw	Akim	2022-02-02	Milli	2021-02-12	f	\N	\N	1	\N	9 Kedzie Lane	31049149	cfbfce9b-9cd1-4bdc-9d77-ca9d7f8af4a6	2021-01-01	\N	2022-02-14	\N	\N
+34	Elka	Giffer	1485847016	2bhk	1276	11	semifurnished	1333	3	lqaajw	Sisely	2021-08-07	Ailee	2021-11-30	f	\N	\N	1	\N	9 Dapin Place	29922793	aa2ab289-02c8-4558-b099-e292cf958415	2021-01-01	\N	2022-02-14	\N	\N
+35	Mcbride	Peyton	2553659960	2bhk	907	7	semifurnished	746	2	npmfdt	Auberon	2021-11-06	Rochelle	2022-01-15	f	\N	\N	1	\N	253 Hintze Street	79519716	216d9d58-5324-4db6-8e62-b5f59aadc3ce	2021-01-01	\N	2022-02-14	\N	\N
+38	Lighthouse Bay	Ilise	2595417293	2bhk	1054	3	semifurnished	1883	5	ykjrke	Malissa	2021-08-18	Lilia	2021-03-14	f	\N	\N	1	\N	2 Kim Crossing	95170713	17b684cc-d677-4e92-9000-f3fd2977fa16	2021-01-01	\N	2022-02-14	\N	\N
+40	Hoepker	Muriel	3412061364	2bhk	665	11	semifurnished	1266	3	iysyck	Ralf	2021-03-08	Lowell	2021-08-13	f	\N	\N	1	\N	9317 Valley Edge Way	94799801	10a3ab75-6560-400b-ac1c-666931618182	2021-01-01	\N	2022-02-14	\N	\N
+41	Barby	Issy	9394762589	2bhk	1042	7	semifurnished	1018	3	syisbx	Beckie	2022-01-23	Janna	2021-11-05	f	\N	\N	1	\N	42750 Londonderry Hill	98483746	84f8cce9-c700-48ee-bce2-a212e383a52f	2021-01-01	\N	2022-02-14	\N	\N
+42	Bobwhite	Donnell	9334328006	2bhk	1812	2	semifurnished	180	1	jlwawj	Wrennie	2021-03-10	Marchelle	2021-09-12	f	\N	\N	1	\N	91 School Lane	61716571	1e901ecd-946d-48b3-91d1-cc8a3ebf2eb7	2021-01-01	\N	2022-02-14	\N	\N
+43	Warner	Sharline	4286220691	2bhk	696	1	semifurnished	741	5	niqtvf	Isak	2021-03-07	Llewellyn	2021-09-15	f	\N	\N	1	\N	9 Talmadge Way	37920149	f431fc39-ec24-4682-ab30-8af9aac9bafe	2021-01-01	\N	2022-02-14	\N	\N
+44	Jay	Annora	9328444761	2bhk	515	2	semifurnished	1818	1	iviaqq	Marylee	2021-08-21	Angelo	2021-05-22	f	\N	\N	1	\N	741 Heath Center	21474871	f01bd5de-a980-46cc-8a38-0a208d3bc9b7	2021-01-01	\N	2022-02-14	\N	\N
+45	Commercial	Sky	4274379065	2bhk	841	13	semifurnished	662	5	qxomcc	Valli	2021-05-30	Liv	2021-06-06	f	\N	\N	1	\N	4 Loeprich Circle	78233125	3bd5d762-1f9d-4f32-acf3-a9270ea285cc	2021-01-01	\N	2022-02-14	\N	\N
+46	Bluestem	Rahal	1532121998	2bhk	943	13	semifurnished	927	2	mrcyuz	Mile	2021-06-16	Farlay	2021-02-17	f	\N	\N	1	\N	640 Trailsway Parkway	33347583	4eebdde3-c8d6-4d2f-92c8-4b2584792ac5	2021-01-01	\N	2022-02-14	\N	\N
+47	Donald	Demeter	8799260605	2bhk	1081	9	semifurnished	6	3	nyamka	Romola	2022-01-07	Freddy	2022-01-18	f	\N	\N	1	\N	8860 Mallory Court	37706685	ffd71cbc-1ea8-46ce-8982-8a6db6bb4f52	2021-01-01	\N	2022-02-14	\N	\N
+48	Forest Dale	Dane	1092340428	2bhk	1716	1	semifurnished	1556	1	qvwjkb	Shay	2022-01-15	Heather	2021-09-10	f	\N	\N	1	\N	4212 Rigney Lane	48351047	bcc276b4-8ca5-4d43-89d2-b75413479c38	2021-01-01	\N	2022-02-14	\N	\N
+49	Dayton	Concettina	8146455152	2bhk	1478	14	semifurnished	425	2	tktota	Goldy	2021-02-12	Trude	2021-12-05	f	\N	\N	1	\N	29 Forest Run Alley	48869993	858229e3-8ca6-4cec-a179-e3eb44b071bf	2021-01-01	\N	2022-02-14	\N	\N
+50	Pleasure	Maison	9423882250	2bhk	1609	5	semifurnished	1635	3	jabkpv	Audie	2021-10-02	Julia	2022-02-04	f	\N	\N	1	\N	093 Veith Pass	12098673	bf61aa4a-7774-40fb-b50e-5450e5ac27a0	2021-01-01	\N	2022-02-14	\N	\N
+51	Randy	Cicily	8711700827	2bhk	2487	10	semifurnished	1777	5	zpbmev	Aleen	2021-04-04	Rudolfo	2021-02-18	f	\N	\N	1	\N	7 8th Alley	32944644	c1ba2303-b928-4db8-91f1-1fea530d8a31	2021-01-01	\N	2022-02-14	\N	\N
+53	Daystar	Lina	6355403209	2bhk	1737	13	semifurnished	1611	4	sxbnsx	Lyndsey	2021-11-06	Cathy	2021-03-01	f	\N	\N	1	\N	213 Crowley Circle	48421934	c3799efd-1487-4cc8-b852-4cf7d6721bd7	2021-01-01	\N	2022-02-14	\N	\N
+54	Chive	Therine	8972002368	2bhk	1862	12	semifurnished	1214	2	xrqkfh	Carmina	2021-11-30	Lucas	2021-06-23	f	\N	\N	1	\N	19580 Cody Road	88369730	0477451f-6a44-4b99-8175-7d849619821a	2021-01-01	\N	2022-02-14	\N	\N
+55	Delaware	Kellyann	2323172033	2bhk	1365	3	semifurnished	1499	3	vnsnkx	Gussie	2021-06-16	Selena	2022-02-03	f	\N	\N	1	\N	8 Grayhawk Street	89717985	3e82dabc-f3f6-4ffc-8724-69a6ada71ef3	2021-01-01	\N	2022-02-14	\N	\N
+56	Granby	Griffin	9623037877	2bhk	649	10	semifurnished	1062	4	iwcjam	Kermie	2021-08-28	Mair	2021-10-27	f	\N	\N	1	\N	44 Dawn Park	24456124	e082c8ff-4bbb-42fb-a33d-4a0e87117d31	2021-01-01	\N	2022-02-14	\N	\N
+57	Dahle	Tasha	5403677718	2bhk	719	15	semifurnished	1391	3	mtzahd	Melissa	2021-04-18	Grantley	2021-05-14	f	\N	\N	1	\N	9285 Johnson Pass	95650009	d6e9b8c3-2acc-4261-947e-2d63dccd6f9e	2021-01-01	\N	2022-02-14	\N	\N
+58	Ludington	Kikelia	2422214753	2bhk	1002	3	semifurnished	1857	3	npyoar	Karlotte	2022-02-01	Alanah	2021-10-17	f	\N	\N	1	\N	30 Russell Street	1066291	25f8d9fd-1410-44ec-95c6-f1ed57de28d2	2021-01-01	\N	2022-02-14	\N	\N
+59	Anzinger	Alma	9746968356	2bhk	1264	9	semifurnished	543	1	lzsjpm	Valma	2021-11-23	Thorstein	2021-07-09	f	\N	\N	1	\N	05611 Almo Crossing	71406135	8ae7e34a-2dc1-49a9-9588-fdfd057939cf	2021-01-01	\N	2022-02-14	\N	\N
+60	Amoth	Roxi	4787229213	2bhk	848	2	semifurnished	1830	5	uwtwhf	Edin	2021-11-18	Ellette	2021-07-07	f	\N	\N	1	\N	15694 6th Court	56739809	8d04cf4e-27eb-4b7a-89a8-c21d816bc12e	2021-01-01	\N	2022-02-14	\N	\N
+61	Myrtle	Demetri	5771465920	2bhk	1104	3	semifurnished	7	2	rtjbet	Flossi	2021-09-15	Deerdre	2021-08-09	f	\N	\N	1	\N	8258 Grasskamp Place	80850127	508df736-1025-46ec-b0a2-afe3aef885c3	2021-01-01	\N	2022-02-14	\N	\N
+62	Upham	Lawton	4277577618	2bhk	507	10	semifurnished	1005	3	pziwod	Vannie	2021-11-30	Jone	2021-12-11	f	\N	\N	1	\N	1 Stone Corner Terrace	8106032	819e385d-9c06-45af-acbc-d7d1a65dadc7	2021-01-01	\N	2022-02-14	\N	\N
+63	Eliot	Nikoletta	9598125432	2bhk	1440	11	semifurnished	1129	4	dhizdn	Tamara	2021-04-23	Jehanna	2021-04-21	f	\N	\N	1	\N	885 Clarendon Junction	27206700	58a8d9b1-0696-404c-b073-16eb81045394	2021-01-01	\N	2022-02-14	\N	\N
+64	Sunfield	Justis	6828620083	2bhk	974	5	semifurnished	265	3	busgmn	Ophelie	2021-10-19	Francisca	2021-08-15	f	\N	\N	1	\N	61610 Lillian Point	58390652	40c1db22-6044-46af-956d-c070087337aa	2021-01-01	\N	2022-02-14	\N	\N
+65	Fordem	Jordan	5287509178	2bhk	2107	15	semifurnished	1991	1	quvoyg	Fairlie	2021-05-24	Von	2021-03-27	f	\N	\N	1	\N	46880 Moland Alley	48014023	f4eccbcb-2309-4019-843f-fdf6bde3db66	2021-01-01	\N	2022-02-14	\N	\N
+66	Butternut	Aloysia	9714000177	2bhk	1075	1	semifurnished	1278	4	bnnztj	Rosalie	2021-06-12	Tybi	2021-09-21	f	\N	\N	1	\N	50197 Jana Terrace	20489386	aec3eeae-b96c-45b2-8cf7-a3730aa85653	2021-01-01	\N	2022-02-14	\N	\N
+\.
+
+
+--
+-- TOC entry 3186 (class 0 OID 59099)
+-- Dependencies: 213
+-- Data for Name: resaleleadsfeedback; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.resaleleadsfeedback (resalefbid, description, createdby, createddate, updatedby, updateddate, isdeleted, deleteby, deletedate, resaleleadsid, followupdate) FROM stdin;
+10	test	admin	2022-02-17	\N	\N	\N	\N	\N	89	2022-02-18
+11	Testing	admin	2022-02-17	\N	\N	\N	\N	\N	89	2022-02-26
+12	testing	admin	2022-02-17	\N	\N	\N	\N	\N	36	2022-02-17
+13	testing	admin	2022-02-18	\N	\N	\N	\N	\N	2	2022-02-18
+14	call later	admin	2022-02-21	\N	\N	\N	\N	\N	89	2022-02-21
+\.
+
+
+--
+-- TOC entry 3188 (class 0 OID 59107)
+-- Dependencies: 215
+-- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.roles (roleid, rolename) FROM stdin;
+1	Admin
+2	User
+\.
+
+
+--
+-- TOC entry 3190 (class 0 OID 59115)
+-- Dependencies: 217
+-- Data for Name: saleleads; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.saleleads (saleid, societyname, leadname, mobile, bhk, sqft, furnishedstatus, flatno, wingno, poss, createdby, createddate, updatedby, updateddate, isdeleted, deletedate, deleteby, "assignedTo", brokerage, location, price, leadid, leadgenerationdate, "leadStatus", "followUpDate", email, "PropertyId") FROM stdin;
+5	Geras World of Joy L	Yogesh	9373251107	1 RK 2 BHK 3 BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	lubhan	2021-10-01	f	\N	\N	1	12121111	Kharadi	33.0 L-1.18 Cr	4d10af14-4ca5-7821-99aa-dcd462a98e9d	2021-10-01	\N	2022-02-20	\N	\N
+1	Shubh Gateway	Sakshi Singh	7020644020	2 BHK 3 BHK 3+ BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	admin	2021-10-01	f	2022-02-15	admin	1	1111111	Viman Nagar	1.1 Cr-1.76 Cr	0a38bf7e-7332-0aec-32aa-6197c76a64c3	2021-10-01	Converted	2022-02-20	\N	\N
+8	Geras World of Joy L	Shraddha	9028243692	1 RK 2 BHK 3 BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	lubhan	2021-10-01	f	\N	\N	1	\N	Kharadi	33.0 L-1.18 Cr	1d0cc35b-08fd-64e2-e845-c6c315391b28	2021-10-01	\N	2022-02-18	\N	\N
+9	Geras World of Joy L	Swapnil  ware	7219713907	1 RK 2 BHK 3 BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	lubhan	2021-10-01	f	\N	\N	1	\N	Kharadi	33.0 L-1.18 Cr	807c18ba-824a-8e4f-1fd1-0d24ebc15232	2021-10-01	\N	2022-02-18	\N	\N
+10	Geras World of Joy L	Rohan Navgire	9881116174	1 RK 2 BHK 3 BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	lubhan	2021-10-01	f	\N	\N	1	\N	Kharadi	33.0 L-1.18 Cr	d7a247f1-e19b-ba0b-9d0c-e015ee88063d	2021-10-01	\N	2022-02-18	\N	\N
+2	Shubh Gateway	Rushabh Shingvi	9623907454	2 BHK 3 BHK 3+ BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	admin	2021-10-01	f	2022-02-15	admin	1	22222222	Viman Nagar	1.1 Cr-1.76 Cr	1031d668-f7cc-8d9b-4c10-b2050333ea87	2021-10-01	Shared Details	2022-02-20	\N	\N
+6	Shubh Gateway	archana	9096795981	3 BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	admin	2021-10-01	f	2022-02-15	admin	1	110000	Viman Nagar	1.4 Cr-1.54 Cr	ee5f8e23-5dd4-0b0a-f444-089475722e8c	2021-10-01	Follow Up	2022-02-23	\N	\N
+4	Geras World of Joy L	Deepali	7972937181	1 RK 2 BHK 3 BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	admin	2021-10-01	f	\N	\N	1	500043	Kharadi	33.0 L-1.18 Cr	d01c4354-abfb-8c8a-93d6-3dcdc355fe3c	2021-10-01	Contacted	2022-03-29	\N	\N
+3	Goel Ganga Newtown Phase 2	Swapnil Chaudhari	7028028138	1 BHK 2 BHK 2 BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	admin	2021-10-01	f	2022-02-21	undefined	1	123465	Dhanori	36.44 L-68.71 L	ce0cb7ed-9b5a-681a-419d-bf11e6a25479	2021-10-01	Follow Up	2022-02-20	\N	\N
+7	Shubh Gateway	Sachin Yelwande	8983712712	2 BHK 	\N	unfurnished	\N	\N	\N	lubhan	2022-02-13	admin	2021-10-01	f	2022-03-19	undefined	1	22222222	Viman Nagar	1.1 Cr-1.18 Cr	2037b946-9ffa-1f3a-e4d7-16d488751b51	2021-10-01	Follow Up	2022-02-20	\N	\N
+\.
+
+
+--
+-- TOC entry 3192 (class 0 OID 59124)
+-- Dependencies: 219
+-- Data for Name: saleleadsfeedback; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.saleleadsfeedback (salefbid, description, createdby, createddate, updatedby, updateddate, isdeleted, deleteddate, deleteby, saleleadsid, followupdate) FROM stdin;
+1	Call later	admin	2022-02-13	\N	\N	\N	\N	\N	1	2022-03-01
+3	After Meeting	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-02-23
+4	After Meeting	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-02-23
+5	After Meeting	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-02-13
+6	After Meeting	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-02-24
+7	After Meeting	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-02-25
+8	After Meeting	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-02-25
+9	After Meeting 123456565656	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-07-14
+10	After Meeting 1234565652331y31212398127398217398127398128656	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-07-14
+11	After Meeting 1234 6523 31y31 212 32 739 8217398127398128656	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-07-14
+12	After Mee ng 1234 6523 31y31 212 32 739 8217398127398128656	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-07-14
+13	dfdsfds	admin	2022-02-13	\N	\N	\N	\N	\N	6	2022-02-13
+14	brokerage pending	admin	2022-02-14	\N	\N	\N	\N	\N	6	2022-03-02
+15	collect brokerage	admin	2022-02-14	\N	\N	\N	\N	\N	6	2022-02-23
+16	Call later	admin	2022-02-14	\N	\N	\N	\N	\N	6	2022-02-15
+17	Testing date	admin	2022-02-14	\N	\N	\N	\N	\N	6	2022-02-25
+18	Testing date	admin	2022-02-14	\N	\N	\N	\N	\N	6	2022-02-14
+19	Testing date	admin	2022-02-14	\N	\N	\N	\N	\N	7	2022-02-14
+20	Testing date	admin	2022-02-14	\N	\N	\N	\N	\N	1	2022-02-14
+21	After meeting	admin	2022-02-15	\N	\N	\N	\N	\N	7	2022-02-15
+22	After meeting	admin	2022-02-15	\N	\N	\N	\N	\N	1	2022-02-16
+23	Collect brokerage	admin	2022-02-15	\N	\N	\N	\N	\N	1	2022-02-15
+24	In a meeting	admin	2022-02-15	\N	\N	\N	\N	\N	3	2022-02-17
+25	Call back	admin	2022-02-16	\N	\N	\N	\N	\N	3	2022-02-24
+26	after meeting	admin	2022-02-16	\N	\N	\N	\N	\N	3	2022-02-25
+27	testing 1	admin	2022-02-18	\N	\N	\N	\N	\N	3	2022-02-18
+28	removed from workday	admin	2022-02-18	\N	\N	\N	\N	\N	3	2022-02-19
+29	meeting date	admin	2022-02-18	\N	\N	\N	\N	\N	6	2022-02-19
+30	next day	admin	2022-02-18	\N	\N	\N	\N	\N	1	2022-02-19
+31	testing	admin	2022-02-18	\N	\N	\N	\N	\N	1	2022-02-18
+32	next day	admin	2022-02-18	\N	\N	\N	\N	\N	1	2022-02-19
+33	update folllowUp date	admin	2022-02-18	\N	\N	\N	\N	\N	1	2022-02-19
+34	retest	admin	2022-02-18	\N	\N	\N	\N	\N	2	2022-02-19
+35	testing	admin	2022-02-18	\N	\N	\N	\N	\N	3	2022-02-19
+36	test	admin	2022-02-18	\N	\N	\N	\N	\N	4	2022-03-04
+37	after meeting	admin	2022-02-21	\N	\N	\N	\N	\N	6	2022-02-21
+38	testing after 4:30pm	admin	2022-02-23	\N	\N	\N	\N	\N	6	2022-02-23
+39	test	admin	2022-03-29	\N	\N	\N	\N	\N	4	2022-03-29
+\.
+
+
+--
+-- TOC entry 3194 (class 0 OID 59158)
+-- Dependencies: 221
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.users (userid, username, userpassword, createdby, updatedby, createddate, updateddate, isdeleted, deletedby, deleteddate, roleid) FROM stdin;
+1	admin	user001	salif	salif	2022-01-25	2022-01-25	N	N	\N	2
+\.
+
+
+--
+-- TOC entry 3213 (class 0 OID 0)
+-- Dependencies: 202
+-- Name: apiLogs_logId_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."apiLogs_logId_seq"', 935, true);
+
+
+--
+-- TOC entry 3214 (class 0 OID 0)
+-- Dependencies: 204
+-- Name: plotleads_plotid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.plotleads_plotid_seq', 1, false);
+
+
+--
+-- TOC entry 3215 (class 0 OID 0)
+-- Dependencies: 206
+-- Name: plotleadsfeedback_plotfbid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.plotleadsfeedback_plotfbid_seq', 8, true);
+
+
+--
+-- TOC entry 3216 (class 0 OID 0)
+-- Dependencies: 208
+-- Name: rentalleads_rentalid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.rentalleads_rentalid_seq', 1, false);
+
+
+--
+-- TOC entry 3217 (class 0 OID 0)
+-- Dependencies: 210
+-- Name: rentalleadsfeedback_rentalfbid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.rentalleadsfeedback_rentalfbid_seq', 2, true);
+
+
+--
+-- TOC entry 3218 (class 0 OID 0)
+-- Dependencies: 212
+-- Name: resaleleads_resaleid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.resaleleads_resaleid_seq', 1, false);
+
+
+--
+-- TOC entry 3219 (class 0 OID 0)
+-- Dependencies: 214
+-- Name: resaleleadsfeedback_resalefbid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.resaleleadsfeedback_resalefbid_seq', 14, true);
+
+
+--
+-- TOC entry 3220 (class 0 OID 0)
+-- Dependencies: 216
+-- Name: roles_roleid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.roles_roleid_seq', 1, false);
+
+
+--
+-- TOC entry 3221 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: saleleads_saleid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.saleleads_saleid_seq', 1, false);
+
+
+--
+-- TOC entry 3222 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: saleleadsfeedback_salefbid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.saleleadsfeedback_salefbid_seq', 39, true);
+
+
+--
+-- TOC entry 3223 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: users_userid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.users_userid_seq', 1, false);
+
+
+--
+-- TOC entry 3014 (class 2606 OID 59187)
+-- Name: apiLogs apiLogs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."apiLogs"
+    ADD CONSTRAINT "apiLogs_pkey" PRIMARY KEY ("logId");
+
+
+--
+-- TOC entry 3016 (class 2606 OID 59191)
+-- Name: plotleads plotleads_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.plotleads
+    ADD CONSTRAINT plotleads_pkey PRIMARY KEY (plotid);
+
+
+--
+-- TOC entry 3018 (class 2606 OID 59193)
+-- Name: plotleadsfeedback plotleadsfeedback_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.plotleadsfeedback
+    ADD CONSTRAINT plotleadsfeedback_pkey PRIMARY KEY (plotfbid);
+
+
+--
+-- TOC entry 3020 (class 2606 OID 59203)
+-- Name: rentalleads rentalleads_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rentalleads
+    ADD CONSTRAINT rentalleads_pkey PRIMARY KEY (rentalid);
+
+
+--
+-- TOC entry 3022 (class 2606 OID 59205)
+-- Name: rentalleadsfeedback rentalleadsfeedback_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rentalleadsfeedback
+    ADD CONSTRAINT rentalleadsfeedback_pkey PRIMARY KEY (rentalfbid);
+
+
+--
+-- TOC entry 3024 (class 2606 OID 59207)
+-- Name: resaleleads resaleleads_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resaleleads
+    ADD CONSTRAINT resaleleads_pkey PRIMARY KEY (resaleid);
+
+
+--
+-- TOC entry 3026 (class 2606 OID 59209)
+-- Name: resaleleadsfeedback resaleleadsfeedback_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resaleleadsfeedback
+    ADD CONSTRAINT resaleleadsfeedback_pkey PRIMARY KEY (resalefbid);
+
+
+--
+-- TOC entry 3028 (class 2606 OID 59211)
+-- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.roles
+    ADD CONSTRAINT roles_pkey PRIMARY KEY (roleid);
+
+
+--
+-- TOC entry 3030 (class 2606 OID 59213)
+-- Name: saleleads saleleads_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.saleleads
+    ADD CONSTRAINT saleleads_pkey PRIMARY KEY (saleid);
+
+
+--
+-- TOC entry 3032 (class 2606 OID 59215)
+-- Name: saleleadsfeedback saleleadsfeedback_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.saleleadsfeedback
+    ADD CONSTRAINT saleleadsfeedback_pkey PRIMARY KEY (salefbid);
+
+
+--
+-- TOC entry 3034 (class 2606 OID 59217)
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (userid);
+
+
+--
+-- TOC entry 3035 (class 2606 OID 59223)
+-- Name: plotleads plotleads_userid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.plotleads
+    ADD CONSTRAINT plotleads_userid_fkey FOREIGN KEY ("assignedTo") REFERENCES public.users(userid);
+
+
+--
+-- TOC entry 3036 (class 2606 OID 59228)
+-- Name: plotleadsfeedback plotleadsfeedback_plotid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.plotleadsfeedback
+    ADD CONSTRAINT plotleadsfeedback_plotid_fkey FOREIGN KEY (plotid) REFERENCES public.plotleads(plotid);
+
+
+--
+-- TOC entry 3037 (class 2606 OID 59233)
+-- Name: rentalleads rentalleads_userid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rentalleads
+    ADD CONSTRAINT rentalleads_userid_fkey FOREIGN KEY ("assignedTo") REFERENCES public.users(userid);
+
+
+--
+-- TOC entry 3038 (class 2606 OID 59238)
+-- Name: rentalleadsfeedback rentalleadsfeedback_rentalleadsid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rentalleadsfeedback
+    ADD CONSTRAINT rentalleadsfeedback_rentalleadsid_fkey FOREIGN KEY (rentalleadsid) REFERENCES public.rentalleads(rentalid);
+
+
+--
+-- TOC entry 3039 (class 2606 OID 59243)
+-- Name: resaleleads resaleleads_userid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resaleleads
+    ADD CONSTRAINT resaleleads_userid_fkey FOREIGN KEY ("assignedTo") REFERENCES public.users(userid);
+
+
+--
+-- TOC entry 3040 (class 2606 OID 59248)
+-- Name: resaleleadsfeedback resaleleadsfeedback_resaleleadsid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resaleleadsfeedback
+    ADD CONSTRAINT resaleleadsfeedback_resaleleadsid_fkey FOREIGN KEY (resaleleadsid) REFERENCES public.resaleleads(resaleid);
+
+
+--
+-- TOC entry 3041 (class 2606 OID 59253)
+-- Name: saleleads saleleads_userid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.saleleads
+    ADD CONSTRAINT saleleads_userid_fkey FOREIGN KEY ("assignedTo") REFERENCES public.users(userid);
+
+
+--
+-- TOC entry 3042 (class 2606 OID 59258)
+-- Name: saleleadsfeedback saleleadsfeedback_saleleadsid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.saleleadsfeedback
+    ADD CONSTRAINT saleleadsfeedback_saleleadsid_fkey FOREIGN KEY (saleleadsid) REFERENCES public.saleleads(saleid);
+
+
+--
+-- TOC entry 3043 (class 2606 OID 59263)
+-- Name: users users_roleid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_roleid_fkey FOREIGN KEY (roleid) REFERENCES public.roles(roleid);
+
+
+-- Completed on 2022-06-02 21:00:00
+
+--
+-- PostgreSQL database dump complete
+--
+
