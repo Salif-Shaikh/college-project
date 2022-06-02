@@ -1,2 +1,1 @@
-# Tsk-Realty-API
-Tsk API Development
+Api and server folder
